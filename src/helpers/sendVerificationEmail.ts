@@ -7,12 +7,13 @@ export async function sendVerificationEmail(email:string,username:string,verifyC
 
     try {
         
-        await resend.emails.send({
+        const res= await resend.emails.send({
             from:"onboarding@resend.dev",
             to: email,
             subject: "Mystry Message Verify your email address",
             react:VerificationEmail({username,otp:verifyCode})
         })
+        console.log(res)
         return{
             status: 200,
             message: "Verification email sent successfully",
