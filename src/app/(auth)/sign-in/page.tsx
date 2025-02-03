@@ -8,6 +8,7 @@ import { signInSchema } from '@/schemas/signInSchema'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
 import { signIn } from 'next-auth/react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -110,8 +111,15 @@ function SignInPage() {
               />
               <Button type='submit' variant={'outline'} className='mt-10'>{isSubmitting?<>
               <Loader2 className='w-4 h-4 animate-spin mr-4'/> Please wait...</>:"Sign In"}</Button>
+              
             </form>
           </Form>
+          <div className='text-center mt-4'>
+            <p>
+              Don&apos;t have an Account?{' '}
+              <Link href={'/sign-up'} className='text-blue-500 hover:text-blue-700'>Sign Up</Link>
+            </p>
+          </div>
         </div>
       </div>
     </>
