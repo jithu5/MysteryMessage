@@ -15,8 +15,11 @@ export async function POST(request: Request) {
 
     try {
         const { username, code } = await request.json()
-
-        const result = await VerifyCodeQuerySchema.safeParse(code)
+        console.log(typeof code)
+        const result = await VerifyCodeQuerySchema.safeParse({code:{code}})
+        console.log("Error in code valid ", result.error)
+        console.log(result.success)
+        console.log(result.data)
         if (!result.success) {
             const codeErrors = result.error.format().code?._errors || [];
 
@@ -34,10 +37,12 @@ export async function POST(request: Request) {
                 success: false
             }, { status: 404 })
         }
-
+        console.log("user verify code ",user.verifyCode)
         const isCodeValid = user.verifyCode === code;
 
         const isCodeNotExpired = new Date(user.verifyCodeExpiry) > new Date()
+        console.log("isCodeValid ", isCodeValid)
+        console.log("isCodeNotExpired ", isCodeNotExpired)
 
         if (!isCodeValid || !isCodeNotExpired) {
             return NextResponse.json({
@@ -47,7 +52,7 @@ export async function POST(request: Request) {
         }
 
         user.isVerified = true;
-        user.verifyCode = '';
+        // user.verifyCode = '';
         await user.save();
 
         return NextResponse.json({
@@ -55,10 +60,10 @@ export async function POST(request: Request) {
             success: true
         }, { status: 200 })
 
-    } catch (error) {
-        console.log("Error verifying user ", error)
+    } catch (error: any) {
+        console.log("Error verifying user ", error.message);
         return NextResponse.json({
-            message: "Failed to create new user",
+            message: error.message,
             success: false
         })
     }
