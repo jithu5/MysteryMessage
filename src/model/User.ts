@@ -3,6 +3,7 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface IMessage extends Document {
     content: string;
     createdAt: Date;
+    _id: string;
 }
 
 export interface IUser extends Document {
