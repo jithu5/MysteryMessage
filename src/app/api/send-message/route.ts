@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
         const newMessage: IMessage = {
             content: content,
-            createdAt: new Date()
+            createdAt: new Date(),
         }
 
         user.messages.push(newMessage)

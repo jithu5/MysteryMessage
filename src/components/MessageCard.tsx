@@ -39,7 +39,7 @@ function MessageCard({ message, onMessageDelete }: MessageCardProp) {
                     description: 'Your message has been successfully deleted.',
                     variant: 'default',
                 })
-                onMessageDelete(message._id)
+                onMessageDelete(message._id!)
                 return
             }
             toast({
