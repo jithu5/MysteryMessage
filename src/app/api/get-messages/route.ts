@@ -12,8 +12,9 @@ export async function GET(req: Request) {
     const session = await getServerSession(authOptions)
 
     const user: User = session?.user as User;
+    console.log(user)
 
-    if (!session || !session.user) {
+    if (!session || !session?.user) {
         return NextResponse.json({
             message: "Not authenticated",
             success: false
@@ -41,7 +42,7 @@ export async function GET(req: Request) {
             }
         ])
 
-        if (!user || user.length === 0) {
+        if (!user) {
             return NextResponse.json({
                 message: "User not found",
                 success: false
