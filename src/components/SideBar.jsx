@@ -1,6 +1,7 @@
+"use client"
 import React from 'react'
 
-function page() {
+function SideBar() {
   return (
     <div>
       
@@ -8,4 +9,4 @@ function page() {
   )
 }
 
-export default page
+export default SideBar

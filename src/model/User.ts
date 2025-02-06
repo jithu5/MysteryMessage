@@ -3,7 +3,8 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface IMessage extends Document {
     content: string;
     createdAt: Date;
-    // _id?: string;
+    sender: object;
+    reciever: object;
 }
 
 export interface IUser extends Document {
@@ -13,7 +14,6 @@ export interface IUser extends Document {
     verifyCode: string;
     verifyCodeExpiry: Date;
     isVerified: boolean;
-    isAcceptingMessage: boolean;
     messages: IMessage[];
 }
 
@@ -26,6 +26,16 @@ const MessageSchema: Schema<IMessage> = new Schema({
         type: Date,
         required: true,
         default: Date.now
+    },
+    sender: {
+        type: Schema.Types.ObjectId,
+        required: true,
+        ref: "User"
+    },
+    reciever: {
+        type: Schema.Types.ObjectId,
+        required: true,
+        ref: "User"
     }
 })
 
@@ -58,11 +68,6 @@ const UserSchema: Schema<IUser> = new Schema({
     isVerified: {
         type: Boolean,
         default: false
-    },
-    isAcceptingMessage: {
-        type: Boolean,
-        // required: true,
-        default: true
     },
     messages: [MessageSchema]
 })
