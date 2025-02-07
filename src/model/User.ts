@@ -5,6 +5,7 @@ export interface IMessage extends Document {
     createdAt: Date;
     sender: object;
     reciever: object;
+    role:string;
 }
 
 export interface IUser extends Document {
@@ -36,6 +37,11 @@ const MessageSchema: Schema<IMessage> = new Schema({
         type: Schema.Types.ObjectId,
         required: true,
         ref: "User"
+    },
+    role:{
+        type: String,
+        enum: ["sender", "receiver"],
+        default: "sender"
     }
 })
 
@@ -73,5 +79,6 @@ const UserSchema: Schema<IUser> = new Schema({
 })
 
 const UserModel = (mongoose.models.User as mongoose.Model<IUser>) || mongoose.model<IUser>("User",UserSchema);
+
 
 export default UserModel;
