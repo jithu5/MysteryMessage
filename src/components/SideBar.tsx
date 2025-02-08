@@ -14,7 +14,6 @@ function SideBar() {
   const { data: session, status } = useSession();
 
   const handelSignOut = (e: React.MouseEvent) => {
-
     signOut()
   }
 
