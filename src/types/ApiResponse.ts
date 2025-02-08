@@ -5,6 +5,6 @@ export interface IApiResponse {
     success: boolean;
     message: string;
     isAcceptingMessage?: boolean;
-    // data?: any;
+    data?: any;
     messages?: Array<IMessage>
 }

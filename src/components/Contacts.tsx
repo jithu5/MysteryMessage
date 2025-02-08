@@ -1,17 +1,11 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Input } from './ui/input';
 import { Separator } from './ui/separator';
+import { signOut } from 'next-auth/react';
+import axios from 'axios';
+import { IApiResponse } from '@/types/ApiResponse';
 
-function Contacts() {
-  const [isScrollable, setIsScrollable] = useState<boolean>(false)
-
- const onMouseEnter = (e: React.MouseEvent) =>{
-   setIsScrollable(true)
- }
- const onMouseLeave = (e: React.MouseEvent) =>{
-   setIsScrollable(false)
- }
 // Hardcoded data for contacts
 const contacts = [
   {
@@ -121,19 +115,60 @@ const contacts = [
   },
 ];
 
+function Contacts() {
+  const [isScrollable, setIsScrollable] = useState<boolean>(false)
+  const [contactList, setContactList] = useState(contacts)
+  const [searchUser, setSearchUser] = useState('')
+
+ const onMouseEnter = (e: React.MouseEvent) =>{
+   setIsScrollable(true)
+ }
+ const onMouseLeave = (e: React.MouseEvent) =>{
+   setIsScrollable(false)
+ }
+
+ const handelSignOut = (e: React.MouseEvent) =>{
+
+  signOut()
+ }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchUser(e.target.value);
+  };
+
+
+ useEffect(() => {
+  async function search_user() {
+    try {
+      const { data } = await axios.get<IApiResponse>(`/api/search-user?search=${searchUser}`)
+      console.log(data.data)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  search_user()
+   
+ }, [searchUser])
+ 
+
   return (
     <>
       <div className='fixed w-[30vw]  top-0 left-0 h-screen bg-lightBackground overflow-hidden'>
         <header className='w-[30vw] top-0 left-0 fixed bg-lightBackground h-24 flex flex-col items-center gap-3 py-4 px-4 md:px-10'>
+          <div className='flex items-center justify-between w-full'>
+
+          <button onClick={handelSignOut} className='text-white bg-red-500 hover:bg-red-600 px-4 py-1 rounded-full'>Sign Out</button>
           <h1 className='text-3xl font-semibold text-center'>Contacts</h1>
-          <Input className='bg-stone-900 px-3 py-2' placeholder='Search here...'>
+          </div>
+          <Input value={searchUser} onChange={handleChange} className='bg-stone-900 px-3 py-2' placeholder='Search here...'>
           </Input>
         </header>
-        <main onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} className={`w-full mt-24 py-3 px-4 md:px-8 flex-1 overflow-x-hidden ${isScrollable ? "overflow-y-auto" : "overflow-y-hidden"} no-scroll `} style={{ height: "calc(100vh - 6rem)" }} // Adjusting for mt-24 (6rem)
+        <main onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} className={`w-full mt-24 py-3 px-4 md:px-8 flex-1 overflow-x-hidden ${isScrollable ? "overflow-y-auto" : "overflow-y-hidden"} no-scroll `} style={{ height: "calc(100vh - 8rem)" }} // Adjusting for mt-24 (6rem)
 >
           {/* Contacts list */}
           <div className='space-y-4'>
-            {contacts.map(contact => (
+            {contactList.map(contact => (
               <div key={contact.id}>
                 <div className='flex items-center gap-4 p-3 bg-darkGray rounded-lg'>
 

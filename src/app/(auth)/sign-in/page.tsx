@@ -55,7 +55,7 @@ function SignInPage() {
         description: "You have signed in successfully",
         variant: 'default',
       })
-      router.replace('/dashboard')
+      router.replace('/')
     }
   }
 
