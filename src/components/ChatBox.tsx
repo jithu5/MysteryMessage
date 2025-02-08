@@ -59,7 +59,7 @@ function ChatBox() {
   };
 
   return (
-    <main className="w-[70vw] h-screen bg-stone-800 fixed right-0 top-0 flex flex-col overflow-hidden">
+    <main className="w-[63vw] h-screen bg-stone-800 fixed right-[7%] top-0 flex flex-col overflow-hidden">
       <header className="flex items-center justify-between p-4 h-20 bg-stone-900">
         <span className="text-xl font-semibold text-white">John Doe</span>
         <div className="w-10" />
@@ -79,7 +79,7 @@ function ChatBox() {
         </div>
       </section>
 
-      <div className="fixed w-[70vw] bottom-0 flex items-center bg-stone-700">
+      <div className="fixed w-[60vw] right-[7%] bottom-0 flex items-center bg-stone-700">
         <input
           type="text"
           placeholder="Type a message..."

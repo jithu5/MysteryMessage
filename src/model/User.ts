@@ -16,6 +16,7 @@ export interface IUser extends Document {
     verifyCodeExpiry: Date;
     isVerified: boolean;
     messages: IMessage[];
+    profileImage:string;
 }
 
 const MessageSchema: Schema<IMessage> = new Schema({
@@ -74,6 +75,9 @@ const UserSchema: Schema<IUser> = new Schema({
     isVerified: {
         type: Boolean,
         default: false
+    },
+    profileImage:{
+        type: String,
     },
     messages: [MessageSchema]
 })

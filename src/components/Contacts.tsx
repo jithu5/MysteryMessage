@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { Input } from './ui/input';
 import { Separator } from './ui/separator';
-import { signOut } from 'next-auth/react';
 import axios from 'axios';
 import { IApiResponse } from '@/types/ApiResponse';
 
@@ -127,10 +126,6 @@ function Contacts() {
    setIsScrollable(false)
  }
 
- const handelSignOut = (e: React.MouseEvent) =>{
-
-  signOut()
- }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchUser(e.target.value);
@@ -157,8 +152,6 @@ function Contacts() {
       <div className='fixed w-[30vw]  top-0 left-0 h-screen bg-lightBackground overflow-hidden'>
         <header className='w-[30vw] top-0 left-0 fixed bg-lightBackground h-24 flex flex-col items-center gap-3 py-4 px-4 md:px-10'>
           <div className='flex items-center justify-between w-full'>
-
-          <button onClick={handelSignOut} className='text-white bg-red-500 hover:bg-red-600 px-4 py-1 rounded-full'>Sign Out</button>
           <h1 className='text-3xl font-semibold text-center'>Contacts</h1>
           </div>
           <Input value={searchUser} onChange={handleChange} className='bg-stone-900 px-3 py-2' placeholder='Search here...'>
