@@ -163,7 +163,7 @@ function Contacts() {
           <div className='space-y-4'>
             {contactList.map(contact => (
               <div key={contact.id}>
-                <div className='flex items-center gap-4 p-3 bg-darkGray rounded-lg'>
+                <div className='flex items-center gap-4 p-3 bg-darkGray rounded-lg hover:bg-stone-700'>
 
                 <img src={contact.image} alt={contact.name} className='w-12 h-12 rounded-full object-cover' />
                 <div className='flex flex-col'>
