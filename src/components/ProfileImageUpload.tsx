@@ -1,10 +1,14 @@
 "use client";
+import { useToast } from "@/hooks/use-toast";
+import axios from "axios";
 import { CloudUpload, X } from "lucide-react";
 import React, { useRef, useState } from "react";
 
 function ProfileImageUpload() {
   const [image, setImage] = useState<File | null>(null);
   const profileRef = useRef<HTMLInputElement | null>(null);
+
+  const{toast} = useToast()
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -31,6 +35,30 @@ function ProfileImageUpload() {
     // print formData in for loop
     for (const [key, value] of formData.entries()) {
       console.log(`${key}: ${value}`);
+    }
+    // Make API call to upload the image
+    try {
+      const { data } = await axios.post('/api/update-profile', formData,{withCredentials:true});
+      if (!data.success) {
+        toast({
+          title: "Image Upload Failed",
+          description: data.message,
+          variant: "destructive",
+        })
+        return;
+      }
+      toast({
+        title: "Image Uploaded Successfully",
+        description: data.message,
+        variant: "default",
+      })
+    } catch (error : any) {
+      console.log("Error in uploading profile image")
+      toast({
+        title: "Image Upload Failed",
+        description:error.message,
+        variant: "destructive",
+      })
     }
 
   };
