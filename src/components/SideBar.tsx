@@ -46,7 +46,7 @@ function SideBar() {
       <aside className="flex flex-col h-screen w-[7vw] fixed right-0 top-0 bg-lightBackground text-foreground px-2 py-5 md:py-10 items-center justify-start gap-6">
         <Popover>
           <PopoverTrigger asChild>
-            <img src={user?.profileImage || "/user.png"} alt="" className="w-[50%] object-cover cursor-pointer" />
+            <img src={user?.profileImage || "/user.png"} alt="" className="w-10 h-10 object-cover cursor-pointer rounded-full object-center" />
           </PopoverTrigger>
           <ProfileSetting />
         </Popover>

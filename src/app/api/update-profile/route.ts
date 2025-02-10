@@ -1,99 +1,77 @@
-import { NextResponse } from "next/server";
-import upload from "@/lib/multer.middleware";
-import { UploadImageToCloudinary, DeleteImageFromCloudinary } from "@/lib/cloudinary.config";
-import { getPublicId } from "@/lib/getPublicId";
-import { getServerSession } from "next-auth";
-import dbConnect from "@/lib/dbConnect";
-import { authOptions } from "../auth/[...nextauth]/options";
-import UserModel from "@/model/User";
-import mongoose from "mongoose";
-import fs from "fs";
+import { v2 as cloudinary } from 'cloudinary';
+import dbConnect from '@/lib/dbConnect';
+import { getServerSession, User } from 'next-auth';
+import UserModel from '@/model/User';
+import { authOptions } from '../auth/[...nextauth]/options';
+import mongoose from 'mongoose';
+import { NextResponse } from 'next/server';
 
-// Ensure API runs in Node.js environment
-export const runtime = "nodejs";
-
-// Convert Multer callback to a promise-based function
-const uploadMiddleware = (req: any) =>
-    new Promise((resolve, reject) => {
-        upload.single("profileImage")(req, {} as any, (err) => {
-            if (err) reject(err);
-            else resolve(req);
-        });
-    });
+cloudinary.config({
+    cloud_name: process.env.CLOUD_NAME,
+    api_key: process.env.CLOUD_API_KEY,
+    api_secret: process.env.CLOUD_API_SECRET,
+});
 
 export async function POST(req: Request) {
-    console.log("inside upload route")
+    if (req.method !== 'POST')
+        return NextResponse.json({ message: "Invalid request", success: false }, { status: 404 });
+
     await dbConnect();
     const session = await getServerSession(authOptions);
-
     if (!session || !session.user) {
-        return NextResponse.json({ message: "Not authenticated", success: false }, { status: 401 });
+        return NextResponse.json({ message: "User not authenticated", success: false }, { status: 401 });
     }
 
-    const user: any = session.user;
+    const user: User = session.user as User;
     const userId = new mongoose.Types.ObjectId(user._id);
+    if (!userId)
+        return NextResponse.json({ message: "User not authenticated", success: false }, { status: 401 });
 
-    if (!userId) {
-        return NextResponse.json({ message: "User ID not found", success: false }, { status: 404 });
+    const currentUser = await UserModel.findById(userId);
+    if (!currentUser)
+        return NextResponse.json({ message: "User not found", success: false }, { status: 401 });
+
+    // Get FormData from request
+    const formData = await req.formData();
+    const file = formData.get('profileImage') as File;
+
+    if (!file)
+        return NextResponse.json({ message: 'No file uploaded', success: false }, { status: 400 });
+
+    // Delete the old profile image from Cloudinary
+    if (currentUser.profileImage) {
+        const profileImageUrl = currentUser.profileImage;
+        const parts = profileImageUrl.split('/');
+        const publicIdWithExtension = parts[parts.length - 1]; // Last part of the URL
+        const publicId = publicIdWithExtension.split('.')[0]; // Remove the file extension
+
+        try {
+            await cloudinary.uploader.destroy(publicId);
+        } catch (error) {
+            console.log("Error deleting profile image:", error);
+            return NextResponse.json({ message: 'Error deleting profile image', success: false }, { status: 400 });
+        }
     }
 
     try {
-        const userData = await UserModel.findById(userId);
-        console.log(userData)
-        if (!userData) {
-            return NextResponse.json({ message: "User not found", success: false }, { status: 404 });
-        }
-        
-        // Parse form-data
-        await uploadMiddleware(req as any);
-        
-        // Ensure file is uploaded
-        const multerRequest = req as any;
-        console.log(multerRequest)
-        if (!multerRequest.file) {
-            return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
-        }
-        
-        const filePath = req.file.path;
-        console.log(filePath)
+        // Convert File object to Buffer for Cloudinary upload
+        const fileBuffer = Buffer.from(await file.arrayBuffer());
 
-        // Remove temp file after upload
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-            console.log("Temporary file deleted.");
-        }
+        const result = await cloudinary.uploader.upload_stream(
+            { folder: 'whatsapp-profile', resource_type: 'auto' },
+            async (error, uploadedImage) => {
+                if (error) {
+                    return NextResponse.json({ message: 'Cloudinary upload failed', success: false }, { status: 500 });
+                }
+                currentUser.profileImage = uploadedImage.secure_url;
+                await currentUser.save();
+            }
+        ).end(fileBuffer);
 
-        // Delete old profile image from Cloudinary
-        if (userData.profileImage) {
-            const public_id = await getPublicId(userData.profileImage);
-            await DeleteImageFromCloudinary(public_id);
-        }
+        return NextResponse.json({ data: currentUser, message: "Profile image updated successfully", success: true }, { status: 200 });
 
-        // Upload to Cloudinary
-        const uploadedImage = await UploadImageToCloudinary(filePath);
-
-        // Remove temp file after upload
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-            console.log("Temporary file deleted.");
-        }
-
-        if (!uploadedImage) {
-            return NextResponse.json({ error: "Failed to upload image" }, { status: 500 });
-        }
-
-        // Update user profile image in DB
-        userData.profileImage = uploadedImage.secure_url;
-        await userData.save();
-
-        return NextResponse.json({
-            url: uploadedImage.secure_url,
-            public_id: uploadedImage.public_id,
-            success: true,
-        }, { status: 200 });
-
-    } catch (error) {
-        console.error("Upload error:", error);
-        return NextResponse.json({ error: "Server error" }, { status: 500 });
+    } catch (error: any) {
+        console.log(error)
+        return NextResponse.json({ message: error.message, success: false, error: error.message }, { status: 500 });
     }
 }
