@@ -12,7 +12,7 @@ export async function GET(req: Request) {
     const user: User = session?.user as User;
     const userId = new mongoose.Types.ObjectId(user._id);
     try {
-        const user = await UserModel.findById(userId).select("-password -verifyCode");
+        const user = await UserModel.findById(userId).select("-password -verifyCode -verifyCodeExpiry -messages");
         if (!user) {
             return NextResponse.json({ message: "User not found", success: false }, { status: 404 });
         }

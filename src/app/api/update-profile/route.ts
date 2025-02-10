@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     if (!userId)
         return NextResponse.json({ message: "User not authenticated", success: false }, { status: 401 });
 
-    const currentUser = await UserModel.findById(userId);
+    const currentUser = await UserModel.findById(userId).select("-password -verifyCode -verifyCodeExpiry -messages");
     if (!currentUser)
         return NextResponse.json({ message: "User not found", success: false }, { status: 401 });
 
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
         const publicId = publicIdWithExtension.split('.')[0]; // Remove the file extension
 
         try {
-            await cloudinary.uploader.destroy(publicId);
+            await cloudinary.uploader.destroy(`whatsapp-profile/${publicId}`);
         } catch (error) {
             console.log("Error deleting profile image:", error);
             return NextResponse.json({ message: 'Error deleting profile image', success: false }, { status: 400 });
@@ -57,18 +57,37 @@ export async function POST(req: Request) {
         // Convert File object to Buffer for Cloudinary upload
         const fileBuffer = Buffer.from(await file.arrayBuffer());
 
-        const result = await cloudinary.uploader.upload_stream(
-            { folder: 'whatsapp-profile', resource_type: 'auto' },
-            async (error, uploadedImage) => {
-                if (error) {
-                    return NextResponse.json({ message: 'Cloudinary upload failed', success: false }, { status: 500 });
-                }
-                currentUser.profileImage = uploadedImage.secure_url;
-                await currentUser.save();
-            }
-        ).end(fileBuffer);
 
-        return NextResponse.json({ data: currentUser, message: "Profile image updated successfully", success: true }, { status: 200 });
+        return new Promise((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+                { folder: "whatsapp-profile", resource_type: "auto" },
+                async (error, uploadedImage) => {
+                    if (error || !uploadedImage) {
+                        reject(NextResponse.json({ message: "Cloudinary upload failed", success: false }, { status: 500 }));
+                        return;
+                    }
+
+                    console.log("Uploaded image:", uploadedImage);
+
+                    try {
+                        const updatedUser = await UserModel.findByIdAndUpdate(
+                            userId,
+                            { profileImage: uploadedImage.secure_url },
+                            { new: true } // ✅ Returns the updated user
+                        );
+
+                        if (!updatedUser) {
+                            reject(NextResponse.json({ message: "User not found", success: false }, { status: 404 }));
+                            return;
+                        }
+
+                        resolve(NextResponse.json({ message: "Profile updated", success: true, data: updatedUser }, { status: 200 }));
+                    } catch (dbError) {
+                        reject(NextResponse.json({ message: "Error updating profile image", success: false }, { status: 400 }));
+                    }
+                }
+            ).end(fileBuffer);
+        });
 
     } catch (error: any) {
         console.log(error)

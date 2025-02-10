@@ -25,19 +25,12 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const searchedUser = searchParams.get("search");
 
-    if (!searchedUser) {
-        return NextResponse.json({ message: "No search query provided", success: false }, { status: 400 });
-    }
-
     try {
         // Case-insensitive search using regex
         const searchUser = await UserModel.findOne({
-            username: { $regex: new RegExp(`^${searchedUser}$`, "i") }
+            username: { $regex: new RegExp(`^${searchedUser}$`, "i") },
+            _id: { $ne: userId } // Exclude current user
         }).select("-password")
-
-        if (!searchUser) {
-            return NextResponse.json({ message: "No user found with this username", success: false }, { status: 404 });
-        }
 
         return NextResponse.json({
             message: "User found",

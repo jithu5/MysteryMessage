@@ -17,6 +17,7 @@ import { z } from 'zod'
 function SignInPage() {
   const [isSubmitting, setisSubmitting] = useState<boolean>(false)
 
+
   const router = useRouter()
 
   const {toast} = useToast()
@@ -55,6 +56,7 @@ function SignInPage() {
         description: "You have signed in successfully",
         variant: 'default',
       })
+      console.log(result)
       router.replace('/')
     }
   }

@@ -3,10 +3,13 @@ import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
 import { CloudUpload, X } from "lucide-react";
 import React, { useRef, useState } from "react";
+import useUserStore from "@/store/userSore";
 
 function ProfileImageUpload() {
   const [image, setImage] = useState<File | null>(null);
   const profileRef = useRef<HTMLInputElement | null>(null);
+
+  const {setUser,user} = useUserStore();
 
   const{toast} = useToast()
 
@@ -47,6 +50,8 @@ function ProfileImageUpload() {
         })
         return;
       }
+      setUser(data.data)
+      console.log(user)
       toast({
         title: "Image Uploaded Successfully",
         description: data.message,
