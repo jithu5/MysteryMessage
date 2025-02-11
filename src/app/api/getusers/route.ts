@@ -7,7 +7,7 @@ import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 
 
-export async function GET(req: Request) {
+export async function POST(req: Request) {
     await dbConnect();
 
     
@@ -22,10 +22,14 @@ export async function GET(req: Request) {
     
         const user: User = session.user as User;
         const userId = new mongoose.Types.ObjectId(user._id);
-    
-        const {recieverId} = await req.json();
 
-        if (!recieverId) {
+        const body = await req.json(); // ✅ Read JSON only once
+        console.log("Request body:", body);
+
+        const { receiverId } = body as { receiverId: string };
+        console.log("receiver id ", receiverId)
+
+        if (!receiverId) {
             return NextResponse.json({ message: "Not authenticated", success: false }, { status: 401});
         }
         try {

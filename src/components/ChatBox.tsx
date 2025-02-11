@@ -2,96 +2,147 @@
 import { SendHorizontal } from "lucide-react";
 import React, { useState, useEffect, useRef } from "react";
 import { useSocket } from "@/context/SocketProvider";
+import useChatBoxStore from "@/store/chatBoxStore";
+import axios from "axios";
+import { useSession } from "next-auth/react";
 
-interface IChat {
-  id: number;
-  sender: string;
+interface IMessage {
+  _id: string;
   content: string;
-  time: string;
+  sender: { _id: string; name: string };
+  createdAt: Date;
 }
 
 function ChatBox() {
+  const { data: session } = useSession();
   const socket = useSocket();
-  const [messages, setMessages] = useState<IChat[]>([
-    { id: 1, sender: "John", content: "Hey there! How's it going?", time: "10:05 AM" },
-    { id: 2, sender: "You", content: "Hey! I'm doing great. What about you?", time: "10:06 AM" },
-    { id: 3, sender: "John", content: "Just chilling. Any plans for today?", time: "10:07 AM" },
-  ]);
-  const [newMessage, setNewMessage] = useState<string>("");
+  const [messages, setMessages] = useState<IMessage[]>([]);
+  const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const { chatBox } = useChatBoxStore();
+  console.log(chatBox)
 
   useEffect(() => {
-    if (!socket) return;
+    if (!chatBox || !socket || !session?.user._id) return;
 
-    // Listen for incoming messages
-    const handleMessage = (message: IChat) => {
-      console.log("Received:", message);
-      setMessages((prevMessages) => [...prevMessages, message]);
+    const participants = [session.user._id, chatBox].sort();
+    const roomId = participants.join("_");
+
+    console.log(`Joining room: ${roomId}`);
+    socket.emit("joinRoom", roomId);
+
+    const handleNewMessage = (message: IMessage) => {
+      console.log("New message received:", message);
+      setMessages((prev) => [...prev, message]); // Ensures UI updates without refresh
     };
 
-    socket.on("message", handleMessage);
+    socket.on("newMessage", handleNewMessage);
 
     return () => {
-      socket.off("message", handleMessage);
+      console.log(`Leaving room: ${roomId}`);
+      socket.off("newMessage", handleNewMessage);
+      socket.emit("leaveRoom", roomId);
     };
-  }, [socket]);
+  }, [chatBox, socket, session?.user._id]);
+
+  useEffect(() => {
+    console.log(chatBox,socket,session?.user._id)
+    if (!chatBox || !socket || !session?.user._id) return;
+    async function fetchMessages() {
+      const { data } = await axios.post('/api/get-messages', JSON.stringify(chatBox), { headers: { 'Content-Type': 'application/json' } });
+      console.log(data)
+      if (data.success) {
+        setMessages(data.data);
+      } else {
+        console.error("Error fetching messages:", data.message);
+      }
+    }
+    fetchMessages();
+  },[])
+
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const sendMessage = () => {
-    if (!socket || newMessage.trim() === "") return;
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !chatBox) return;
 
-    const messageData: IChat = {
-      id: Date.now(),
-      sender: "You",
+    const tempMessage: IMessage = {
+      _id: Date.now().toString(), // Temporary ID
       content: newMessage,
-      time: new Date().toLocaleTimeString(),
+      sender: { _id: session?.user._id || "", name: "You" },
+      createdAt: new Date(),
     };
 
-    socket.emit("sendMessage", messageData);
+    setMessages((prev) => [...prev, tempMessage]); // Show immediately
 
-    // Prevent duplicate by checking if the server already broadcasts the message
-    // setMessages([messageData]);
+    try {
+      await axios.post("/api/send-message", {
+        chatBox,
+        content: newMessage,
+      });
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
 
-    setNewMessage("");
+    setNewMessage(""); // Clear input
   };
 
+
+  if (!chatBox) return null;
+
   return (
-    <main className="w-[63vw] h-screen bg-stone-800 fixed right-[7%] top-0 flex flex-col overflow-hidden">
-      <header className="flex items-center justify-between p-4 h-20 bg-stone-900">
-        <span className="text-xl font-semibold text-white">John Doe</span>
-        <div className="w-10" />
+    <div className="w-[60%] h-screen flex flex-col bg-gray-100 fixed right-[10%] top-0">
+      <header className="p-4 bg-white border-b flex items-center">
+        <div className="flex items-center space-x-4">
+          <h2 className="text-xl font-semibold">
+            {messages[0]?.sender._id === chatBox
+              ? messages[0]?.sender.name
+              : "Loading..."}
+          </h2>
+        </div>
       </header>
 
-      <section className="py-5 px-4 md:px-16 flex flex-col overflow-hidden" style={{ height: "calc(100vh - 8rem)" }}>
-        <div className="overflow-y-auto h-full w-full no-scroll">
-          {messages.map((message) => (
-            <div key={message.id} className={`mb-4 ${message.sender === "You" ? "text-right" : "text-left"}`}>
-              <div className={`inline-block ${message.sender === "You" ? "bg-blue-500 text-white" : "bg-gray-700 text-white"} p-3 rounded-lg`}>
-                <p>{message.content}</p>
-                <span className="block text-xs mt-1">{message.time}</span>
-              </div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((message) => (
+          <div
+            key={message._id}
+            className={`flex ${message.sender._id === session?.user._id ? "justify-end" : "justify-start"}`}
+          >
+            <div
+              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message.sender._id === session?.user._id
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 text-gray-800"
+                }`}
+            >
+              <p>{message.content}</p>
+              <p className="text-xs mt-1 opacity-70">
+                {new Date(message.createdAt).toLocaleTimeString()}
+              </p>
             </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-      </section>
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
 
-      <div className="fixed w-[60vw] right-[7%] bottom-0 flex items-center bg-stone-700">
+      <div className="p-4 bg-white border-t flex items-center">
         <input
           type="text"
-          placeholder="Type a message..."
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          className="px-6 md:px-10 py-4 bg-stone-700 text-white w-full outline-none"
+          onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+          placeholder="Type a message..."
+          className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-        <div className="px-7">
-          <SendHorizontal className="text-white cursor-pointer" onClick={sendMessage} />
-        </div>
+        <button
+          onClick={sendMessage}
+          className="ml-2 p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+        >
+          <SendHorizontal size={20} />
+        </button>
       </div>
-    </main>
+    </div>
   );
 }
 

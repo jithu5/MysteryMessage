@@ -4,9 +4,10 @@ import { Input } from './ui/input';
 import { Separator } from './ui/separator';
 import axios from 'axios';
 import { IApiResponse } from '@/types/ApiResponse';
+import useChatBoxStore from '@/store/chatBoxStore';
 
 type contacts =  {
-  _id: number;
+  _id: string;
   username: string;
   profileImage: string;
 }
@@ -24,6 +25,7 @@ function Contacts() {
   const [contactList, setContactList] = useState<contacts[]>([]);
   const [searchedUser, setSearchedUser] = useState<serchedUser>({ });
   const [searchUser, setSearchUser] = useState('');
+  const { setChatBox ,chatBox} = useChatBoxStore()
 
   const onMouseEnter = () => setIsScrollable(true);
   const onMouseLeave = () => setIsScrollable(false);
@@ -35,7 +37,7 @@ function Contacts() {
   useEffect(() => {
     async function fetchContacts() {
       try {
-        const { data } = await axios.get<IApiResponse>('/api/get-users');
+        const { data } = await axios.post<IApiResponse>('/api/getusers',chatBox);
         setContactList(data.data || []);
       } catch (error) {
         console.error(error);
@@ -62,6 +64,10 @@ function Contacts() {
     searchUserRequest();
   }, [searchUser]);
 
+  const setChatBoxId =(id : string)=>{
+    setChatBox(id);
+  }
+
 
   return (
     <div className='fixed w-[30vw] top-0 left-0 h-screen bg-lightBackground overflow-hidden'>
@@ -74,7 +80,7 @@ function Contacts() {
         {contactList.length > 0 ? (
           <div className='space-y-4'>
             {contactList.map(contact => (
-              <div key={contact._id}>
+              <div key={contact._id} onClick={()=>setChatBoxId(contact._id)}>
                 <div className='flex items-center gap-4 p-3 bg-darkGray rounded-lg hover:bg-stone-700'>
                   <img src={contact.profileImage} alt={contact.username} className='w-12 h-12 rounded-full object-cover' />
                   <div className='flex flex-col'>
@@ -92,7 +98,7 @@ function Contacts() {
         )}
 
         {searchedUser._id && (
-          <div key={searchedUser._id}>
+          <div key={searchedUser._id} onClick={()=>setChatBoxId(searchedUser._id)}>
             <div className='flex items-center gap-4 p-3 bg-darkGray rounded-lg hover:bg-stone-700'>
               <img src={searchedUser.profileImage} alt={searchedUser.username} className='w-12 h-12 rounded-full object-cover' />
               <div className='flex flex-col'>

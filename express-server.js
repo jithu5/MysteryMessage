@@ -1,30 +1,43 @@
-const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
-const cors = require("cors");
 
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:3000", // Adjust for your frontend
-    methods: ["GET", "POST"],
-  },
-});
+let io;
 
-io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
-
-  socket.on("sendMessage", (message) => {
-    io.emit("message", message); // Broadcast message to all clients
-    console.log(message);
+const initializeSocket = (server) => {
+  io = new Server(server, {
+    cors: {
+      origin: "http://localhost:3000",
+      methods: ["GET", "POST"],
+    },
   });
 
-  socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
+  io.on("connection", (socket) => {
+    console.log("User connected:", socket.id);
+
+    socket.on("joinRoom", (chatId) => {
+      socket.join(chatId);
+    });
+
+    socket.on("sendMessage", (message) => {
+      io.to(message.chatId).emit("message", message); // Send only to chat room
+    });
+
+    socket.on("disconnect", () => {
+      console.log("User disconnected:", socket.id);
+    });
   });
+
+  return io;
+};
+
+
+
+const server = http.createServer();
+initializeSocket(server);
+
+const PORT = 3001;
+server.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
 });
 
-server.listen(3001, () => {
-  console.log("WebSocket server running on port 3001");
-});
+module.exports = { initializeSocket, getIo: () => io };
