@@ -2,9 +2,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/options";
 import dbConnect from "@/lib/dbConnect";
 import MessageModel from "@/model/message";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     await dbConnect();
 
     const session = await getServerSession(authOptions);
@@ -16,24 +16,26 @@ export async function POST(request: Request) {
     }
 
     try {
-        console.log(request.json())
-        const { receiverId } = await request.json();
+        const rawBody = await request.text(); // Get the raw body as a string
+        console.log("Raw request body:", rawBody);
+        // Manually parse the JSON
+        const  receiverId  = JSON.parse(rawBody);
         const senderId = session.user._id;
+        console.log("get message :",receiverId,senderId);
 
-        const messages = await MessageModel.find({
-            $or: [
-                { sender: senderId, receiver: receiverId },
-                { sender: receiverId, receiver: senderId }
-            ]
-        })
-            .sort({ createdAt: 1 })
-            .populate("sender", "name")
-            .lean();
+        if (!receiverId || !senderId) {
+            return NextResponse.json({ message: "Invalid user ID", success: false }, { status: 400 });
+        }
 
-        return NextResponse.json(
-            { success: true, messages },
-            { status: 200 }
-        );
+        const roomId = [senderId, receiverId].sort().join("_");
+
+        const messages = await MessageModel.find({ roomId });
+
+        return NextResponse.json({ data: messages, success: true, message: "successfully fetched messages" }, {
+            status: 200  // Status code 200 means the request was successful.
+        });
+
+
     } catch (error: any) {
         console.log(error)
         return NextResponse.json(

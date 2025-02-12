@@ -9,7 +9,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     const [socket, setSocket] = useState<Socket | null>(null);
 
     useEffect(() => {
-        const newSocket = io("http://localhost:3001", {
+        const newSocket = io("http://localhost:5000", {
             autoConnect: true,
             reconnection: true,
             reconnectionAttempts: 5, // Number of attempts before failing

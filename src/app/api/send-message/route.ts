@@ -1,12 +1,12 @@
 import dbConnect from "@/lib/dbConnect";
-import UserModel from "@/model/User";
+// import UserModel from "@/model/User";
 import MessageModel from "@/model/message";
 import { getServerSession } from "next-auth";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { authOptions } from "../auth/[...nextauth]/options";
-import { getIo} from "../../../../express-server"
+// import { getIo } from "../../../../express-server"
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     await dbConnect();
 
     const session = await getServerSession(authOptions);
@@ -18,7 +18,9 @@ export async function POST(request: Request) {
     }
 
     try {
-        const { content, receiverId } = await request.json();
+        const body = await request.json();
+        console.log(body)
+        const { content, receiverId } = body;
         const senderId = session.user._id;
 
         if (!content || !receiverId) {
@@ -28,32 +30,27 @@ export async function POST(request: Request) {
             );
         }
 
-        // Create new message
+        const roomId = [senderId, receiverId].sort().join("_")
+
         const newMessage = await MessageModel.create({
-            content,
             sender: senderId,
-            receiver: receiverId
-        });
+            receiver: receiverId,
+            content: content,
+            roomId: roomId
+        })
 
-        // Populate sender details
-        const populatedMessage = await MessageModel.findById(newMessage._id)
-            .populate("sender", "name");
+        console.log(newMessage)
 
-        // Get chat room ID
-        const participants = [senderId, receiverId].sort();
-        const roomId = participants.join("_");
+        return NextResponse.json({
+            success: true,
+            message: "Message sent successfully",
+            data: newMessage
+        },
+            {
+                status: 201
+            })
 
-        // Emit message via socket
-        const io = getIo();
-        if (io) {
-            console.log(`Emitting message to room: ${roomId}`);
-            io.to(roomId).emit("newMessage", populatedMessage);
-        }
 
-        return NextResponse.json(
-            { message: "Message sent", success: true, data: populatedMessage },
-            { status: 201 }
-        );
     } catch (error: any) {
         return NextResponse.json(
             { message: "Error sending message", success: false, error: error.message },

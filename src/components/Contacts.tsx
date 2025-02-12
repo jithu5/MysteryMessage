@@ -37,7 +37,12 @@ function Contacts() {
   useEffect(() => {
     async function fetchContacts() {
       try {
-        const { data } = await axios.post<IApiResponse>('/api/getusers',chatBox);
+        const { data } = await axios.post<IApiResponse>('/api/getusers',JSON.stringify({chatBox}),{
+          headers:{
+            'Content-Type': 'application/json'
+          }
+        });
+        console.log(data.data)
         setContactList(data.data || []);
       } catch (error) {
         console.error(error);
