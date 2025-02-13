@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
                         email: "$userDetails.email",
                         profileImage: "$userDetails.profileImage",
                         lastMessage: {
-                            text: "$lastMessage.content", // Assuming `content` stores the message
+                            content: "$lastMessage.content", // Assuming `content` stores the message
                             createdAt: "$lastMessage.createdAt",
                             
                         }

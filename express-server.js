@@ -25,12 +25,18 @@ io.on("connection", (socket) => {
     console.log(`User joined room: ${roomId}`);
   });
 
-socket.on("sendMessage", (data) => {
-  const { roomId, sender, content, reciever ,createdAt,_id} = data;
+  socket.on("sendMessage", (data) => {
+    const { roomId, sender, content, reciever, createdAt, _id } = data;
 
-  // Emit with the correct event name
-  io.to(roomId).emit("receiveMessage", { sender, content, reciever,createdAt,_id });
-});
+    // Emit with the correct event name
+    io.to(roomId).emit("receiveMessage", {
+      sender,
+      content,
+      reciever,
+      createdAt,
+      _id,
+    });
+  });
 
   socket.on("disconnect", () => {
     console.log(`🚪 Client disconnected: ${socket.id}`);
