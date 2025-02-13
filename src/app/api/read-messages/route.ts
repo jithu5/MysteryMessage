@@ -19,9 +19,9 @@ export async function POST(request: NextRequest) {
         const rawBody = await request.text(); // Get the raw body as a string
         console.log("Raw request body:", rawBody);
         // Manually parse the JSON
-        const  receiverId  = JSON.parse(rawBody);
+        const receiverId = JSON.parse(rawBody);
         const senderId = session.user._id;
-        console.log("get message :",receiverId,senderId);
+        console.log("get message :", receiverId, senderId);
 
         if (!receiverId || !senderId) {
             return NextResponse.json({ message: "Invalid user ID", success: false }, { status: 400 });
@@ -29,9 +29,14 @@ export async function POST(request: NextRequest) {
 
         const roomId = [senderId, receiverId].sort().join("_");
 
-        const messages = await MessageModel.find({ roomId });
+        // Update all messages in the room to set isRead = true
+        await MessageModel.updateMany({ roomId }, { $set: { isRead: true } });
 
-        return NextResponse.json({ data: messages, success: true, message: "successfully fetched messages" }, {
+        // Fetch the updated messages after marking them as read
+        const updatedMessages = await MessageModel.find({ roomId });
+
+        console.log(updatedMessages);
+        return NextResponse.json({ data: updatedMessages, success: true, message: "successfully fetched messages" }, {
             status: 200  // Status code 200 means the request was successful.
         });
 

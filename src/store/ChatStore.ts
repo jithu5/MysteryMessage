@@ -7,6 +7,7 @@ type Message = {
     createdAt: Date;
     roomId: string;
     _id:string;
+    isRead: boolean;
 }
 
 
@@ -18,7 +19,11 @@ interface ChatState {
 
 const useChatStore = create<ChatState>((set) => ({
     messages: [],
-    addMessage: (message: Message) => set((state) => ({ messages: [...state.messages, message] })),
+    addMessage: (message: Message) =>
+        set((state) => {
+            console.log("Current messages:", state.messages);
+            return { messages: [...(state.messages || []), message] };
+        }),
     setMessages: (messages: Message[]) => set({ messages }),
 }));
 

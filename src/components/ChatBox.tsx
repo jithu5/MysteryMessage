@@ -18,15 +18,18 @@ function ChatBox() {
 
   useEffect(() => {
     if (!session?.user || !chatBox) return;
-
+    
     const roomId = [session.user._id, chatBox].sort().join("_");
     socket.emit("joinRoom", { roomId });
   }, [chatBox, session?.user._id]); // Runs only when user or chatbox changes
-
+  
   // Keep the listener active for real-time updates
+  
   useEffect(() => {
+    if (!session?.user._id) return;
     const handleMessageReceive = (msg: any) => {
-      if (msg.sender !== msg.reciever) {
+      console.log(msg.sender,session?.user._id)
+      if (msg.sender !== session?.user._id) {
         addMessage(msg);
       }
     };
@@ -44,7 +47,7 @@ console.log(messages);
 
     const fetchMessage = async () => {
       try {
-        const { data } = await axios.post("/api/get-messages", JSON.stringify(chatBox), {
+        const { data } = await axios.post("/api/read-messages", JSON.stringify(chatBox), {
           headers: { "Content-Type": "application/json" },
         });
 
@@ -75,17 +78,19 @@ console.log(messages);
       if (!data.success) {
         return
       }
+ 
+
       // Emit the message via socket
       socket.emit("sendMessage", {
         roomId: [session?.user._id, chatBox?.toString()].sort().join("_"),
         sender: session?.user._id,
-        reciever: chatBox?.toString(),
+        receiver: chatBox?.toString(),
         content: message.trim(),
         createdAt: new Date().toISOString(),
         _id: data.data._id,
       });
 
-      // ✅ Remove `addMessage(data.data);` here to avoid duplicate messages
+       addMessage(data.data); // here to avoid duplicate messages
       setMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
@@ -106,7 +111,7 @@ console.log(messages);
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg, index) => {
+        {messages && messages.length > 0 && messages.map((msg, index) => {
           const isSender = msg.sender === session?.user._id;
           const msgDate = new Date(msg.createdAt).toLocaleDateString();
 

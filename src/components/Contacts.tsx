@@ -6,6 +6,7 @@ import axios from "axios";
 import { IApiResponse } from "@/types/ApiResponse";
 import useChatBoxStore from "@/store/chatBoxStore";
 import { io } from "socket.io-client";
+import { useSession } from "next-auth/react";
 
 type Contact = {
   _id: string;
@@ -26,11 +27,13 @@ type SearchedUser = {
 const socket = io("http://localhost:5000");
 
 function Contacts() {
+  const { data: session } = useSession();
   const [isScrollable, setIsScrollable] = useState<boolean>(false);
   const [contactList, setContactList] = useState<Contact[]>([]);
   const [searchedUser, setSearchedUser] = useState<SearchedUser>({});
   const [searchUser, setSearchUser] = useState("");
   const { setChatBox, chatBox } = useChatBoxStore();
+  const [newMessageCounts, setNewMessageCounts] = useState<{ [key: string]: number }>({});
 
   const onMouseEnter = () => setIsScrollable(true);
   const onMouseLeave = () => setIsScrollable(false);
@@ -38,30 +41,45 @@ function Contacts() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchUser(e.target.value);
   };
-
-  // ✅ Socket listener to update last message
+  let roomId;
   useEffect(() => {
-    const handleMessageReceive = (msg: { reciever: string; content: string; createdAt: string }) => {
-      setContactList((prevContacts) =>
-        prevContacts.map((contact) =>
-          contact._id === msg.reciever
-            ? { ...contact, lastMessage: { content: msg.content, createdAt: msg.createdAt } }
-            : contact
-        )
-      );
-    };
+    if (!session?.user._id && !contactList) return;
+    contactList.forEach((contact) => {
 
-    socket.on("receiveMessage", handleMessageReceive);
+      roomId = [session?.user._id, contact._id].sort().join("_");
+      socket.emit("joinRoom", { roomId });
+    })
+  }, [session?.user._id])
+
+
+  useEffect(() => {
+    console.log("hey")
+    socket.on("receiveMessage", (message) => {
+      console.log("New message received:", message);
+      setNewMessageCounts((prevCounts) => ({
+        ...prevCounts,
+        [message.sender]: (prevCounts[message.sender] || 0) + 1,
+      }))
+    });
 
     return () => {
-      socket.off("receiveMessage", handleMessageReceive);
+      socket.off("receiveMessage"); // Cleanup to prevent memory leaks
     };
   }, []);
 
+  useEffect(()=>{
+    async function getAllMessages() {
+      const {data} = await axios.get('/api/get-all-messages')
+      if (!data.success) {
+        console.log(data.message);
+        return;
+      }
+      console.log(data)
+    }
+    getAllMessages()
+  },[]);
 
-  console.log(JSON.stringify(contactList))
-
-
+console.log(newMessageCounts)
   useEffect(() => {
     async function fetchContacts() {
       try {
@@ -157,6 +175,11 @@ function Contacts() {
                       })
                       : ""}
                   </span>
+                  {newMessageCounts[contact._id] > 0 && (
+                    <div className="text-white bg-foreground rounded-full w-4 h-4 text-sm flex items-center justify-center">
+                      {newMessageCounts[contact._id]}
+                    </div>
+                  )}
                 </div>
                 <Separator orientation="horizontal" className="my-1 bg-white h-[0.5px]" />
               </div>
@@ -185,6 +208,7 @@ function Contacts() {
                 <span className="text-sm text-gray-400">Say Hi...</span>
               </div>
               <span className="ml-auto text-sm text-gray-500">67</span>
+             
             </div>
             <Separator orientation="horizontal" className="my-1 bg-white h-[0.5px]" />
           </div>
