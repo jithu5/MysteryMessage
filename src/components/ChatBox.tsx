@@ -7,12 +7,6 @@ import { useSession } from "next-auth/react";
 import { io } from "socket.io-client";
 import useChatStore from "@/store/ChatStore";
 
-interface IMessage {
-  _id: string;
-  content: string;
-  sender: { _id: string; name: string };
-  createdAt: Date;
-}
 const socket = io("http://localhost:5000");
 
 function ChatBox() {
@@ -21,7 +15,7 @@ function ChatBox() {
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const { chatBox } = useChatBoxStore();
-  
+
   useEffect(() => {
     if (!session?.user || !chatBox) return;
 
@@ -32,9 +26,8 @@ function ChatBox() {
   // Keep the listener active for real-time updates
   useEffect(() => {
     const handleMessageReceive = (msg: any) => {
-      console.log(msg.sender,msg.reciever)
       if (msg.sender !== msg.reciever) {
-      addMessage(msg);
+        addMessage(msg);
       }
     };
 
@@ -79,13 +72,17 @@ function ChatBox() {
     try {
       const { data } = await axios.post("/api/send-message", newMessage);
 
+      if (!data.success) {
+        return
+      }
       // Emit the message via socket
       socket.emit("sendMessage", {
         roomId: [session?.user._id, chatBox?.toString()].sort().join("_"),
         sender: session?.user._id,
         reciever: chatBox?.toString(),
         content: message.trim(),
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        _id: data.data._id,
       });
 
       // ✅ Remove `addMessage(data.data);` here to avoid duplicate messages
@@ -111,21 +108,38 @@ function ChatBox() {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg, index) => {
           const isSender = msg.sender === session?.user._id;
-          console.log(msg.createdAt)
+          const msgDate = new Date(msg.createdAt).toLocaleDateString();
+
+          // Check if the date is different from the last message's date
+          const showDate = index === 0 || new Date(messages[index - 1].createdAt).toLocaleDateString() !== msgDate;
+
+
           return (
-            <div key={index} className={`flex ${isSender ? "justify-end" : "justify-start"}`}>
-              <div
-                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow-md ${isSender ? "bg-blue-500 text-white rounded-br-none" : "bg-gray-200 text-gray-800 rounded-bl-none"
-                  }`}
-              >
-                <p>{msg.content}</p>
-                <p className="text-xs mt-1 opacity-70">{new Date(msg.createdAt).toLocaleTimeString()}</p>
+            <React.Fragment key={msg?._id}>
+              {showDate && (
+                <div className="text-center text-gray-500 my-2 font-semibold">
+                  {msgDate}
+                </div>
+              )}
+              <div className={`flex ${isSender ? "justify-end" : "justify-start"}`}>
+                <div
+                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow-md ${isSender
+                    ? "bg-blue-500 text-white rounded-br-none"
+                    : "bg-gray-200 text-gray-800 rounded-bl-none"
+                    }`}
+                >
+                  <p>{msg.content}</p>
+                  <p className="text-xs mt-1 opacity-70">
+                    {new Date(msg.createdAt).toLocaleTimeString()}
+                  </p>
+                </div>
               </div>
-            </div>
+            </React.Fragment>
           );
         })}
         <div ref={messagesEndRef} />
       </div>
+
 
       <div className="p-4 bg-white border-t flex items-center">
         <input

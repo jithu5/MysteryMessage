@@ -26,10 +26,10 @@ io.on("connection", (socket) => {
   });
 
 socket.on("sendMessage", (data) => {
-  const { roomId, sender, content, reciever ,createdAt} = data;
+  const { roomId, sender, content, reciever ,createdAt,_id} = data;
 
   // Emit with the correct event name
-  io.to(roomId).emit("receiveMessage", { sender, content, reciever,createdAt });
+  io.to(roomId).emit("receiveMessage", { sender, content, reciever,createdAt,_id });
 });
 
   socket.on("disconnect", () => {

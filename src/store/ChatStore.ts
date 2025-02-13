@@ -6,6 +6,7 @@ type Message = {
     content: string;
     createdAt: Date;
     roomId: string;
+    _id:string;
 }
 
 

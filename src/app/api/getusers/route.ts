@@ -1,7 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/options";
 import dbConnect from "@/lib/dbConnect";
-import UserModel from "@/model/User";
 import { User } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
@@ -41,7 +40,10 @@ export async function POST(req: NextRequest) {
             const users = await MessageModel.aggregate([
                 {
                     $match: {
-                        $or: [{ sender: new mongoose.Types.ObjectId(userId) }, { receiver: new mongoose.Types.ObjectId(userId) }]
+                        $or: [
+                            { sender: new mongoose.Types.ObjectId(userId) },
+                            { receiver: new mongoose.Types.ObjectId(userId) }
+                        ]
                     }
                 },
                 {
@@ -52,7 +54,8 @@ export async function POST(req: NextRequest) {
                                 then: "$receiver",
                                 else: "$sender"
                             }
-                        }
+                        },
+                        lastMessage: { $last: "$$ROOT" } // Get the last message document
                     }
                 },
                 {
@@ -71,11 +74,17 @@ export async function POST(req: NextRequest) {
                         _id: "$userDetails._id",
                         username: "$userDetails.username",
                         email: "$userDetails.email",
-                        profileImage: "$userDetails.profileImage"
+                        profileImage: "$userDetails.profileImage",
+                        lastMessage: {
+                            text: "$lastMessage.content", // Assuming `content` stores the message
+                            createdAt: "$lastMessage.createdAt",
+                            
+                        }
                     }
                 }
             ]);
 
+            console.log(users)
             return NextResponse.json({ message: "Success", success: true, data:users });
         } catch (error: any) {
             console.log("Error in getting contact",error)
