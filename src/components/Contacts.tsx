@@ -58,11 +58,13 @@ function Contacts() {
     console.log("hey")
     socket.on("receiveMessage", (message) => {
       console.log("New message received:", message);
+      
       setNewMessageCounts((prevCounts) => ({
         ...prevCounts,
         [message.sender]: (prevCounts[message.sender] || 0) + 1,
       }))
       console.log(message)
+      
       setLastMessage((prevLastMessage) => ({
        ...prevLastMessage,
         [message.roomId]: message.content,
@@ -192,7 +194,7 @@ function Contacts() {
                     <span className="text-sm text-gray-400">
                       {/* {contact.lastMessage ? contact.lastMessage.content : "Say Hi..."} */}
                       {/* ✅ Display the number of unread messages */}
-                      {lastMessage?.[[contact._id,session?.user._id].sort().join("_")] || contact.lastMessage?.content || "Say Hi..."}
+                      {lastMessage?.[[session?.user._id, contact._id].sort().join("_")] || contact.lastMessage?.content || "Say Hi..."}
 
 
                     </span>

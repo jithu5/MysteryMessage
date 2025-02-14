@@ -16,32 +16,35 @@ function ChatBox() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const { chatBox } = useChatBoxStore();
 
+
   useEffect(() => {
-    if (!session?.user || !chatBox) return;
-    
-    const roomId = [session.user._id, chatBox].sort().join("_");
+    if (!session?.user._id || !chatBox) return;
+
+    const roomId = [session.user?._id, chatBox?.toString()].sort().join("_");
+    console.log("Joining Room:", roomId);
     socket.emit("joinRoom", { roomId });
-  }, [chatBox, session?.user._id]); // Runs only when user or chatbox changes
-  
+  }, [chatBox, session?.user._id]);
+
+
   // Keep the listener active for real-time updates
-  
+
   useEffect(() => {
-    if (!session?.user._id) return;
-    const handleMessageReceive = (msg: any) => {
-      console.log(msg.sender,session?.user._id)
-      if (msg.sender !== session?.user._id) {
+    // if (!session?.user._id) return;
+    console.log("hello world")
+    socket.on("receiveMessage", (msg: any) => {
+      console.log("Message received:", msg);
+      if (session?.user._id != msg.sender) {
+
         addMessage(msg);
       }
-    };
-
-    socket.on("receiveMessage", handleMessageReceive);
+    });
 
     return () => {
-      socket.off("receiveMessage", handleMessageReceive);
+      socket.off("receiveMessage");
     };
-  }, []); // Runs only once and keeps listening
+  }, [chatBox]); // Runs only once and keeps listening
 
-console.log(messages);
+  console.log(JSON.stringify(messages));
   useEffect(() => {
     if (!session?.user || !chatBox) return;
 
@@ -78,7 +81,7 @@ console.log(messages);
       if (!data.success) {
         return
       }
- 
+
 
       // Emit the message via socket
       socket.emit("sendMessage", {
@@ -90,7 +93,7 @@ console.log(messages);
         _id: data.data._id,
       });
 
-       addMessage(data.data); // here to avoid duplicate messages
+      addMessage(data.data); // here to avoid duplicate messages
       setMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
