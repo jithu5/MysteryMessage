@@ -35,6 +35,7 @@ io.on("connection", (socket) => {
       receiver,
       createdAt,
       _id,
+      roomId
     });
   });
 

@@ -19,7 +19,7 @@ function page() {
     }
     fetchUser()
   }, [setUser])
-  console.log(user)
+  // console.log(user)
   return (
     <>
       <main className='flex items-center justify-between w-full relative'>

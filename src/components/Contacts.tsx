@@ -34,6 +34,7 @@ function Contacts() {
   const [searchUser, setSearchUser] = useState("");
   const { setChatBox, chatBox } = useChatBoxStore();
   const [newMessageCounts, setNewMessageCounts] = useState<{ [key: string]: number }>({});
+  const [lastMessage, setLastMessage] = useState<{[key: string]: string}>({})
 
   const onMouseEnter = () => setIsScrollable(true);
   const onMouseLeave = () => setIsScrollable(false);
@@ -48,6 +49,7 @@ function Contacts() {
 
       roomId = [session?.user._id, contact._id].sort().join("_");
       socket.emit("joinRoom", { roomId });
+
     })
   }, [session?.user._id])
 
@@ -60,6 +62,11 @@ function Contacts() {
         ...prevCounts,
         [message.sender]: (prevCounts[message.sender] || 0) + 1,
       }))
+      console.log(message)
+      setLastMessage((prevLastMessage) => ({
+       ...prevLastMessage,
+        [message.roomId]: message.content,
+      }));
     });
 
     return () => {
@@ -67,19 +74,36 @@ function Contacts() {
     };
   }, []);
 
-  useEffect(()=>{
+  useEffect(() => {
     async function getAllMessages() {
-      const {data} = await axios.get('/api/get-all-messages')
-      if (!data.success) {
-        console.log(data.message);
-        return;
-      }
-      console.log(data)
-    }
-    getAllMessages()
-  },[]);
+      try {
+        const { data } = await axios.get('/api/get-unread-messages');
 
-console.log(newMessageCounts)
+        if (!data.success) {
+          console.log(data.message);
+          return;
+        }
+
+        console.log(data);
+
+        // Update unread message counts for all senders
+        setNewMessageCounts((prevCounts) => {
+          const updatedCounts = { ...prevCounts };
+          data.data.forEach((msg) => {
+            const senderId = msg.sender._id; // Ensure sender exists
+            updatedCounts[senderId] = (updatedCounts[senderId] || 0) + 1;
+          });
+          return updatedCounts;
+        });
+      } catch (error) {
+        console.error("Error fetching unread messages:", error);
+      }
+    }
+
+    getAllMessages();
+  }, [chatBox]);
+
+
   useEffect(() => {
     async function fetchContacts() {
       try {
@@ -97,14 +121,14 @@ console.log(newMessageCounts)
     }
     fetchContacts();
   }, []);
-
+  
   useEffect(() => {
     async function searchUserRequest() {
       if (!searchUser) {
         setSearchedUser({});
         return;
       }
-
+      
       try {
         const { data } = await axios.get<IApiResponse>(
           `/api/search-user?search=${searchUser}`
@@ -114,13 +138,16 @@ console.log(newMessageCounts)
         console.error(error);
       }
     }
-
+    
     searchUserRequest();
   }, [searchUser]);
-
+  
   const setChatBoxId = (id: string) => {
     setChatBox(id);
   };
+  
+  console.log(newMessageCounts)
+  console.log(lastMessage)
 
   return (
     <div className="fixed w-[30vw] top-0 left-0 h-screen bg-lightBackground overflow-hidden">
@@ -163,7 +190,11 @@ console.log(newMessageCounts)
                     </span>
                     {/* ✅ Display the last message */}
                     <span className="text-sm text-gray-400">
-                      {contact.lastMessage ? contact.lastMessage.content : "Say Hi..."}
+                      {/* {contact.lastMessage ? contact.lastMessage.content : "Say Hi..."} */}
+                      {/* ✅ Display the number of unread messages */}
+                      {lastMessage?.[[contact._id,session?.user._id].sort().join("_")] || contact.lastMessage?.content || "Say Hi..."}
+
+
                     </span>
                   </div>
                   {/* ✅ Show only hours and minutes of the last message */}
@@ -208,8 +239,7 @@ console.log(newMessageCounts)
                 <span className="text-sm text-gray-400">Say Hi...</span>
               </div>
               <span className="ml-auto text-sm text-gray-500">67</span>
-             
-            </div>
+                         </div>
             <Separator orientation="horizontal" className="my-1 bg-white h-[0.5px]" />
           </div>
         )}
