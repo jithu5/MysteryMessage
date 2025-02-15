@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
         isRead: false,
         sender: { $ne: session.user._id }
     })
-    console.log("Unread messages: ", messages)
+    // console.log("Unread messages: ", messages)
     return NextResponse.json({ data:messages, success: true });
 }
 

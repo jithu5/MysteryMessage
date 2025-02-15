@@ -6,6 +6,7 @@ import axios from "axios";
 import { useSession } from "next-auth/react";
 import { io } from "socket.io-client";
 import useChatStore from "@/store/ChatStore";
+import { useToast } from "@/hooks/use-toast";
 
 const socket = io("http://localhost:5000");
 
@@ -15,6 +16,7 @@ function ChatBox() {
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const { chatBox } = useChatBoxStore();
+  const { toast } = useToast()
 
 
   useEffect(() => {
@@ -31,9 +33,29 @@ function ChatBox() {
     // if (!session?.user._id) return;
     console.log("hello world")
     socket.on("receiveMessage", (msg: any) => {
-      if (session?.user._id != msg.sender && (msg.receiver === chatBox?.toString())) {
+      if (session?.user._id != msg.sender) {
 
         addMessage(msg);
+      }
+      console.log(msg.receiver, chatBox);
+      if (msg.sender === chatBox) {
+        async function setessageStatustoRead() {
+          const { data } = await axios.post('/api/set-messgae-read-true', JSON.stringify(chatBox))
+          if (!data.success) {
+            toast({
+              title: "Error",
+              description: data.message,
+              variant: "destructive"
+            })
+            return;
+          }
+          toast({
+            title: "Message Read",
+            description: "Message has been marked as read.",
+            variant: "default"
+          })
+        }
+        setessageStatustoRead();
       }
     });
 
@@ -47,7 +69,7 @@ function ChatBox() {
 
     const fetchMessage = async () => {
       try {
-      const { data } = await axios.post("/api/read-messages", JSON.stringify(chatBox), {
+        const { data } = await axios.post("/api/read-messages", JSON.stringify(chatBox), {
           headers: { "Content-Type": "application/json" },
         });
 
@@ -88,7 +110,7 @@ function ChatBox() {
         _id: data.data._id,
       });
 
-      addMessage(data.data); // here to avoid duplicate messages
+      addMessage(data.data);
       setMessage("");
     } catch (error) {
       console.error("Error sending message:", error);

@@ -45,6 +45,8 @@ function Contacts() {
     setSearchUser(e.target.value);
   };
   let roomId;
+
+
   useEffect(() => {
     if (!session?.user._id && !contactList) return;
     contactList.forEach((contact) => {
@@ -82,7 +84,7 @@ function Contacts() {
     return () => {
       socket.off("receiveMessage"); // Cleanup to prevent memory leaks
     };
-  }, [chatBox]);
+  }, [chatBox,socket]);
 
   useEffect(() => {
     async function fetcUnreadCount() {
@@ -95,11 +97,19 @@ function Contacts() {
         })
         return
       }
+      console.log(data.data)
+      toast({
+        title: "Unread Messages",
+        description: "Messages fetched successfully",
+        variant: "default"
+      })
       setUnreadMessageCount((prevCount) => {
         const updatedCount = { ...prevCount };
-        data.data.forEach((contact) => {
-          updatedCount[contact.sender] = (updatedCount[contact.sender])
+        data.data.forEach((contact:{[key: string]:number}) => {
+          console.log(data.data.length)
+          updatedCount[contact.sender] = data.data.length > 0 ? data.data.length : 0
         });
+        return updatedCount;
       })
     }
     fetcUnreadCount()
@@ -171,7 +181,7 @@ function Contacts() {
         {contactList.length > 0 && (
           <div className="space-y-4">
             {contactList.map((contact) => (
-              <div key={contact._id} onClick={() => setChatBoxId(contact._id)}>
+              <div key={contact._id} onClick={() => setChatBoxId(contact._id)} className="relative">
                 <div className="flex items-center gap-4 py-3 bg-darkGray rounded-lg hover:bg-stone-700">
                   {contact?.profileImage ? (
                     <img
@@ -194,10 +204,10 @@ function Contacts() {
                       {/* ✅ Display the number of unread messages */}
                       {lastMessage?.[[session?.user._id, contact._id].sort().join("_")] || contact.lastMessage?.content || "Say Hi..."}
 
-                      {
+                      { unreadMessageCount &&
                         unreadMessageCount[contact._id] &&
                         unreadMessageCount[ contact._id] > 0 && (
-                          <span className="text-red-500 text-xs absolute right-0 ">
+                          <span className="absolute bottom-2 right-2 bg-foreground flex h-5 w-5 justify-center items-center text-md font-semibold text-white rounded-full">
                             {unreadMessageCount[contact._id]}
                           </span>
                         )
