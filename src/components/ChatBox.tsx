@@ -47,7 +47,7 @@ function ChatBox() {
 
     const fetchMessage = async () => {
       try {
-        const { data } = await axios.post("/api/read-messages", JSON.stringify(chatBox), {
+      const { data } = await axios.post("/api/read-messages", JSON.stringify(chatBox), {
           headers: { "Content-Type": "application/json" },
         });
 

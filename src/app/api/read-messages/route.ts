@@ -30,7 +30,9 @@ export async function POST(request: NextRequest) {
         const roomId = [senderId, receiverId].sort().join("_");
 
         // Update all messages in the room to set isRead = true
-        await MessageModel.updateMany({ roomId }, { $set: { isRead: true } });
+        if (senderId !== receiverId) {
+            await MessageModel.updateMany({ roomId }, { $set: { isRead: true } });
+        }
 
         // Fetch the updated messages after marking them as read
         const updatedMessages = await MessageModel.find({ roomId });

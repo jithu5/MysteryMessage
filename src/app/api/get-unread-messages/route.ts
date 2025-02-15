@@ -4,6 +4,7 @@ import MessageModel from "@/model/message";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { authOptions } from "../auth/[...nextauth]/options";
+import { sendError } from "next/dist/server/api-utils";
 // import { getIo } from "../../../../express-server"
 
 export async function GET(request: NextRequest) {
@@ -20,8 +21,9 @@ export async function GET(request: NextRequest) {
     }
 
     const messages = await MessageModel.find({
-        isRead:false
-    }).populate("sender")
+        isRead: false,
+        sender: { $ne: session.user._id }
+    })
     console.log("Unread messages: ", messages)
     return NextResponse.json({ data:messages, success: true });
 }

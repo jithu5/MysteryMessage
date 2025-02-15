@@ -7,6 +7,7 @@ import { IApiResponse } from "@/types/ApiResponse";
 import useChatBoxStore from "@/store/chatBoxStore";
 import { io } from "socket.io-client";
 import { useSession } from "next-auth/react";
+import { useToast } from "@/hooks/use-toast";
 
 type Contact = {
   _id: string;
@@ -34,7 +35,9 @@ function Contacts() {
   const [searchUser, setSearchUser] = useState("");
   const { setChatBox, chatBox } = useChatBoxStore();
   const [lastMessage, setLastMessage] = useState<{ [key: string]: string }>({})
+  const [unreadMessageCount, setUnreadMessageCount] = useState<{ [key: string]: number }>({})
 
+  const { toast } = useToast()
   const onMouseEnter = () => setIsScrollable(true);
   const onMouseLeave = () => setIsScrollable(false);
 
@@ -57,6 +60,19 @@ function Contacts() {
     console.log("hey")
     socket.on("receiveMessage", (message) => {
       console.log("New message received:", message.sender, chatBox?.toString());
+      if (message.sender === chatBox?.toString()) {
+        setUnreadMessageCount((prevCount) => {
+          const updatedCount = { ...prevCount };
+          updatedCount[message.sender] = 0;
+          return updatedCount;
+        })
+      }else{
+        setUnreadMessageCount((prevCount) => {
+          const updatedCount = {...prevCount };
+          updatedCount[message.sender] = (updatedCount[message.sender] || 0) + 1;
+          return updatedCount;
+        })
+      }
       setLastMessage((prevLastMessage) => ({
         ...prevLastMessage,
         [message.roomId]: message.content,
@@ -68,6 +84,26 @@ function Contacts() {
     };
   }, [chatBox]);
 
+  useEffect(() => {
+    async function fetcUnreadCount() {
+      const { data } = await axios.get('/api/get-unread-messages')
+      if (!data.success) {
+        toast({
+          title: "Error",
+          description: data.message,
+          variant: "destructive"
+        })
+        return
+      }
+      setUnreadMessageCount((prevCount) => {
+        const updatedCount = { ...prevCount };
+        data.data.forEach((contact) => {
+          updatedCount[contact.sender] = (updatedCount[contact.sender])
+        });
+      })
+    }
+    fetcUnreadCount()
+  }, [chatBox]);
 
   useEffect(() => {
     async function fetchContacts() {
@@ -110,6 +146,8 @@ function Contacts() {
   const setChatBoxId = (id: string) => {
     setChatBox(id);
   };
+
+  console.log(unreadMessageCount)
 
   return (
     <div className="fixed w-[30vw] top-0 left-0 h-screen bg-lightBackground overflow-hidden">
@@ -156,7 +194,14 @@ function Contacts() {
                       {/* ✅ Display the number of unread messages */}
                       {lastMessage?.[[session?.user._id, contact._id].sort().join("_")] || contact.lastMessage?.content || "Say Hi..."}
 
-
+                      {
+                        unreadMessageCount[contact._id] &&
+                        unreadMessageCount[ contact._id] > 0 && (
+                          <span className="text-red-500 text-xs absolute right-0 ">
+                            {unreadMessageCount[contact._id]}
+                          </span>
+                        )
+                      }
                     </span>
                   </div>
                   {/* ✅ Show only hours and minutes of the last message */}
@@ -168,7 +213,7 @@ function Contacts() {
                       })
                       : ""}
                   </span>
-                  
+
                 </div>
                 <Separator orientation="horizontal" className="my-1 bg-white h-[0.5px]" />
               </div>
