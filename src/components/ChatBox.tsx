@@ -27,13 +27,11 @@ function ChatBox() {
 
 
   // Keep the listener active for real-time updates
-
   useEffect(() => {
     // if (!session?.user._id) return;
     console.log("hello world")
     socket.on("receiveMessage", (msg: any) => {
-      console.log("Message received:", msg);
-      if (session?.user._id != msg.sender) {
+      if (session?.user._id != msg.sender && (msg.receiver === chatBox?.toString())) {
 
         addMessage(msg);
       }
@@ -42,7 +40,7 @@ function ChatBox() {
     return () => {
       socket.off("receiveMessage");
     };
-  }, [chatBox]); // Runs only once and keeps listening
+  }, [chatBox]);
 
   useEffect(() => {
     if (!session?.user || !chatBox) return;
@@ -54,7 +52,6 @@ function ChatBox() {
         });
 
         if (!data.success) {
-          console.log(data.message);
           return;
         }
         setMessages(data.data);
@@ -80,7 +77,6 @@ function ChatBox() {
       if (!data.success) {
         return
       }
-
 
       // Emit the message via socket
       socket.emit("sendMessage", {

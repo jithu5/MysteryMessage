@@ -7,7 +7,6 @@ import { IApiResponse } from "@/types/ApiResponse";
 import useChatBoxStore from "@/store/chatBoxStore";
 import { io } from "socket.io-client";
 import { useSession } from "next-auth/react";
-import useMessageCountStore from "@/store/unReadMessage";
 
 type Contact = {
   _id: string;
@@ -34,8 +33,6 @@ function Contacts() {
   const [searchedUser, setSearchedUser] = useState<SearchedUser>({});
   const [searchUser, setSearchUser] = useState("");
   const { setChatBox, chatBox } = useChatBoxStore();
-  // const { messageCount, setMessageCount } = useMessageCountStore()
-  const [newMessageCounts, setNewMessageCounts] = useState<{ [key: string]: number }>({});
   const [lastMessage, setLastMessage] = useState<{ [key: string]: string }>({})
 
   const onMouseEnter = () => setIsScrollable(true);
@@ -60,11 +57,6 @@ function Contacts() {
     console.log("hey")
     socket.on("receiveMessage", (message) => {
       console.log("New message received:", message.sender, chatBox?.toString());
-
-      setNewMessageCounts((prevCount) => (
-        { ...prevCount, [message.sender]: message.sender != chatBox?.toString() ? (prevCount[message.sender] || 0) + 1 : 0 }
-      ))
-      // setNewMessageCounts({})
       setLastMessage((prevLastMessage) => ({
         ...prevLastMessage,
         [message.roomId]: message.content,
@@ -75,36 +67,6 @@ function Contacts() {
       socket.off("receiveMessage"); // Cleanup to prevent memory leaks
     };
   }, [chatBox]);
-
-  // useEffect(() => {
-  //   async function getAllMessages() {
-  //     try {
-  //       const { data } = await axios.get('/api/get-unread-messages');
-
-  //       if (!data.success) {
-  //         console.log(data.message);
-  //         return;
-  //       }
-
-  //       console.log(data);
-  //       setNewMessageCounts({})
-
-  //       // Update unread message counts for all senders
-  //       setNewMessageCounts((prevCounts) => {
-  //         const updatedCounts = { ...prevCounts };
-  //         data.data.forEach((msg) => {
-  //           const senderId = msg.sender._id; // Ensure sender exists
-  //           updatedCounts[senderId] = (updatedCounts[senderId] || 0) + 1;
-  //         });
-  //         return updatedCounts;
-  //       });
-  //     } catch (error) {
-  //       console.error("Error fetching unread messages:", error);
-  //     }
-  //   }
-
-  //   getAllMessages();
-  // }, []);
 
 
   useEffect(() => {
@@ -148,9 +110,6 @@ function Contacts() {
   const setChatBoxId = (id: string) => {
     setChatBox(id);
   };
-
-  console.log(newMessageCounts)
-  console.log(lastMessage)
 
   return (
     <div className="fixed w-[30vw] top-0 left-0 h-screen bg-lightBackground overflow-hidden">
@@ -209,11 +168,7 @@ function Contacts() {
                       })
                       : ""}
                   </span>
-                  {newMessageCounts[contact._id] > 0 && (
-                    <div className="text-white bg-foreground rounded-full w-4 h-4 text-sm flex items-center justify-center">
-                      {newMessageCounts[contact._id]}
-                    </div>
-                  )}
+                  
                 </div>
                 <Separator orientation="horizontal" className="my-1 bg-white h-[0.5px]" />
               </div>
