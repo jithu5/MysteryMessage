@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
 
     const messages = await MessageModel.find({
         isRead:false
-    }).populate("sender").populate("receiver");
+    }).populate("sender")
+    console.log("Unread messages: ", messages)
     return NextResponse.json({ data:messages, success: true });
 }
 

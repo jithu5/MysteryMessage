@@ -44,7 +44,6 @@ function ChatBox() {
     };
   }, [chatBox]); // Runs only once and keeps listening
 
-  console.log(JSON.stringify(messages));
   useEffect(() => {
     if (!session?.user || !chatBox) return;
 
