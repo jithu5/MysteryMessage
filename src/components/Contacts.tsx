@@ -8,6 +8,7 @@ import useChatBoxStore from "@/store/chatBoxStore";
 import { io } from "socket.io-client";
 import { useSession } from "next-auth/react";
 import { useToast } from "@/hooks/use-toast";
+import useUnreadMessagesStore from "@/store/unReadMessages";
 
 type Contact = {
   _id: string;
@@ -35,7 +36,8 @@ function Contacts() {
   const [searchUser, setSearchUser] = useState("");
   const { setChatBox, chatBox } = useChatBoxStore();
   const [lastMessage, setLastMessage] = useState<{ [key: string]: string }>({})
-  const [unreadMessageCount, setUnreadMessageCount] = useState<{ [key: string]: number }>({})
+  // const [unreadMessageCount, setUnreadMessageCount] = useState<{ [key: string]: number }>({})
+  const { unreadMessages, setUnreadMessage } = useUnreadMessagesStore()
 
   const { toast } = useToast()
   const onMouseEnter = () => setIsScrollable(true);
@@ -63,17 +65,19 @@ function Contacts() {
     socket.on("receiveMessage", (message) => {
       console.log("New message received:", message.sender, chatBox?.toString());
       if (message.sender === chatBox?.toString()) {
-        setUnreadMessageCount((prevCount) => {
-          const updatedCount = { ...prevCount };
-          updatedCount[message.sender] = 0;
-          return updatedCount;
-        })
-      }else{
-        setUnreadMessageCount((prevCount) => {
-          const updatedCount = {...prevCount };
-          updatedCount[message.sender] = (updatedCount[message.sender] || 0) + 1;
-          return updatedCount;
-        })
+        // setUnreadMessageCount((prevCount) => {
+        //   const updatedCount = { ...prevCount };
+        //   updatedCount[message.sender] = 0;
+        //   return updatedCount;
+        // })
+        setUnreadMessage(message.sender, 0)
+      } else {
+        // setUnreadMessageCount((prevCount) => {
+        //   const updatedCount = {...prevCount };
+        //   updatedCount[message.sender] = (updatedCount[message.sender] || 0) + 1;
+        //   return updatedCount;
+        // })
+        setUnreadMessage(message.sender)
       }
       setLastMessage((prevLastMessage) => ({
         ...prevLastMessage,
@@ -84,11 +88,13 @@ function Contacts() {
     return () => {
       socket.off("receiveMessage"); // Cleanup to prevent memory leaks
     };
-  }, [chatBox,socket]);
+  }, [chatBox, socket]);
 
   useEffect(() => {
     async function fetcUnreadCount() {
-      const { data } = await axios.get('/api/get-unread-messages')
+      const { data } = await axios.post('/api/read-messages', {
+        headers: { "Content-Type": "application/json" }})
+
       if (!data.success) {
         toast({
           title: "Error",
@@ -103,13 +109,15 @@ function Contacts() {
         description: "Messages fetched successfully",
         variant: "default"
       })
-      setUnreadMessageCount((prevCount) => {
-        const updatedCount = { ...prevCount };
-        data.data.forEach((contact:{[key: string]:number}) => {
-          console.log(data.data.length)
-          updatedCount[contact.sender] = data.data.length > 0 ? data.data.length : 0
-        });
-        return updatedCount;
+      data.data.unreadMessage.forEach((contact: { [key: string]: number }) => {
+        if (contact.sender?.toString() == chatBox?.toString()) {
+          console.log('inside if')
+          setUnreadMessage(contact.sender.toString(), 0)
+        } else {
+          console.log('not inside if')
+          setUnreadMessage(contact.sender?.toString())
+        }
+
       })
     }
     fetcUnreadCount()
@@ -157,7 +165,7 @@ function Contacts() {
     setChatBox(id);
   };
 
-  console.log(unreadMessageCount)
+  console.log(unreadMessages)
 
   return (
     <div className="fixed w-[30vw] top-0 left-0 h-screen bg-lightBackground overflow-hidden">
@@ -202,13 +210,13 @@ function Contacts() {
                     <span className="text-sm text-gray-400">
                       {/* {contact.lastMessage ? contact.lastMessage.content : "Say Hi..."} */}
                       {/* ✅ Display the number of unread messages */}
-                      {lastMessage?.[[session?.user._id, contact._id].sort().join("_")] || contact.lastMessage?.content || "Say Hi..."}
+                      {lastMessage?.[[session?.user._id, contact._id].sort().join("_")]?.slice(0,5) || contact.lastMessage?.content.slice(0,5) || "Say Hi..."}
 
-                      { unreadMessageCount &&
-                        unreadMessageCount[contact._id] &&
-                        unreadMessageCount[ contact._id] > 0 && (
+                      {unreadMessages &&
+                        unreadMessages.get(contact._id) &&
+                        unreadMessages.get(contact._id)! > 0 && (
                           <span className="absolute bottom-2 right-2 bg-foreground flex h-5 w-5 justify-center items-center text-md font-semibold text-white rounded-full">
-                            {unreadMessageCount[contact._id]}
+                            {unreadMessages.get(contact._id)}
                           </span>
                         )
                       }

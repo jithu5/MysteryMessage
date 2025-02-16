@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { io } from "socket.io-client";
 import useChatStore from "@/store/ChatStore";
 import { useToast } from "@/hooks/use-toast";
+import useUnreadMessagesStore from "@/store/unReadMessages";
 
 const socket = io("http://localhost:5000");
 
@@ -16,6 +17,7 @@ function ChatBox() {
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const { chatBox } = useChatBoxStore();
+  const { setUnreadMessage } = useUnreadMessagesStore()
   const { toast } = useToast()
 
 
@@ -66,7 +68,7 @@ function ChatBox() {
 
   useEffect(() => {
     if (!session?.user || !chatBox) return;
-
+    console.log('heyyyyy')
     const fetchMessage = async () => {
       try {
         const { data } = await axios.post("/api/read-messages", JSON.stringify(chatBox), {
@@ -76,7 +78,18 @@ function ChatBox() {
         if (!data.success) {
           return;
         }
-        setMessages(data.data);
+        setMessages(data.data.message);
+        console.log(data.data.unreadMessage);
+        data.data.unreadMessage.forEach((contact: { [key: string]: number }) => {
+          console.log(contact.sender?.toString(), chatBox?.toString())
+          if (contact.sender?.toString() == chatBox?.toString()) {
+            console.log('inside if')
+            setUnreadMessage(contact.sender.toString(),0)
+          } else {
+            setUnreadMessage(contact.sender?.toString())
+          }
+  
+        })
       } catch (error) {
         console.log("Error in fetching messages", error);
       }

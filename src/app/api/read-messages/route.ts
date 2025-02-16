@@ -22,25 +22,33 @@ export async function POST(request: NextRequest) {
         const receiverId = JSON.parse(rawBody);
         const senderId = session.user._id;
 
-        if (!receiverId || !senderId) {
+        if (!senderId) {
             return NextResponse.json({ message: "Invalid user ID", success: false }, { status: 400 });
         }
-
-        const roomId = [senderId, receiverId].sort().join("_");
-        
-        // Fetch the updated messages after marking them as read
-        const updatedMessages = await MessageModel.find({ roomId });
-        
-        console.log("in updating to true ",senderId, receiverId);
-        updatedMessages.forEach(async message => {
-            console.log("in updating to true ", JSON.stringify(message.sender), receiverId,message.content);
-            if (JSON.stringify(message.sender) == JSON.stringify(receiverId)) {
-                console.log('inside')
-                await MessageModel.updateMany({ roomId }, { $set: { isRead: true } });
-            }
+        const unreadMessage = await MessageModel.find({
+            isRead: false,
+            sender: { $ne: session.user._id }
         })
-        const message = await MessageModel.find({roomId})
-        return NextResponse.json({ data: message, success: true, message: "successfully fetched messages" }, {
+
+        let message = null
+        if (receiverId) {
+            const roomId = [senderId, receiverId].sort().join("_");
+
+            // Fetch the updated messages after marking them as read
+            const updatedMessages = await MessageModel.find({ roomId });
+
+            updatedMessages.forEach(async message => {
+                console.log("in updating to true ", JSON.stringify(message.sender), JSON.stringify(receiverId), message.content);
+                if (JSON.stringify(message.sender) == JSON.stringify(receiverId)) {
+                    console.log('inside')
+                    await MessageModel.updateMany({ roomId }, { $set: { isRead: true } });
+                }
+            })
+            message = await MessageModel.find({ roomId })
+        }
+
+        console.log('unread message in chatbox :', unreadMessage)
+        return NextResponse.json({ data: { message:message, unreadMessage }, success: true, message: "successfully fetched messages" }, {
             status: 200  // Status code 200 means the request was successful.
         });
 
