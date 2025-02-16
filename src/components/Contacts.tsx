@@ -121,7 +121,7 @@ function Contacts() {
       })
     }
     fetcUnreadCount()
-  }, [chatBox]);
+  }, []);
 
   useEffect(() => {
     async function fetchContacts() {

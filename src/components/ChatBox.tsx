@@ -17,7 +17,7 @@ function ChatBox() {
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const { chatBox } = useChatBoxStore();
-  const { setUnreadMessage } = useUnreadMessagesStore()
+  const { setUnreadMessage,unreadMessages } = useUnreadMessagesStore()
   const { toast } = useToast()
 
 
@@ -86,7 +86,10 @@ function ChatBox() {
             console.log('inside if')
             setUnreadMessage(contact.sender.toString(),0)
           } else {
-            setUnreadMessage(contact.sender?.toString())
+            if (unreadMessages.get(contact.sender?.toString()) === 0) {
+              
+              setUnreadMessage(contact.sender?.toString())
+            }
           }
   
         })
@@ -96,7 +99,7 @@ function ChatBox() {
     };
 
     fetchMessage();
-  }, [session?.user._id, chatBox]);
+  }, [session?.user._id,chatBox]);
 
   const sendMessage = async () => {
     if (message.trim() === "") return;
