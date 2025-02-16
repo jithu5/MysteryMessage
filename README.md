@@ -1,13 +1,30 @@
 # Mystery Message
 
-Mystery Message is a real-time chat application built with Next.js, TypeScript, Zustand, and Socket.IO. It allows users to send and receive messages in real-time.
+Mystery Message is a real-time chat application built with Next.js, TypeScript, Zustand, and Socket.IO. It allows users to send and receive messages in real-time. The app supports user authentication, individual chats, unread message notifications, and profile management.
 
 ## Features
 
-- Real-time messaging with Socket.IO
-- User authentication with NextAuth
-- Zustand for state management
-- MongoDB for storing messages and user data
+- **User Authentication**: Implemented using NextAuth.
+- **Real-time Messaging**: Powered by Socket.io for instant message delivery.
+- **State Management**: Zustand for managing user, chatbox, messages, and unread message count.
+- **Unread Message Notifications**: Shows unread message count per contact.
+- **Contacts Section**: Displays users you've chatted with and includes a search option.
+- **Sidebar**: Allows profile image editing.
+- **API Endpoints**: Handled in the `api` folder for various functionalities:
+  - Sign-in / Sign-up
+  - Send / Read Messages
+  - Search User
+  - Verify Code
+  - Update Profile
+  - Check Username Uniqueness
+
+## Tech Stack
+
+- **Frontend**: Next.js, TypeScript
+- **State Management**: Zustand
+- **Real-time Communication**: Socket.io
+- **Authentication**: NextAuth
+- **Database**: MongoDB (or your preferred database)
 
 ## Prerequisites
 
@@ -55,34 +72,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 ### 5. Run the WebSocket server
 
 ```bash
-node express-server.js
-```
-
-## Project Structure
-
-```
-/src
-  /app
-    /api
-      /send-message
-        route.ts
-      /getusers
-        route.ts
-      /get-messages
-        route.ts
-  /components
-    Contacts.tsx
-    ChatBox.tsx
-  /context
-    SocketProvider.tsx
-  /model
-    message.ts
-  /store
-    ChatStore.ts
-    chatBoxStore.ts
-  /types
-    ApiResponse.ts
-express-server.js
+npm start
 ```
 
 ## Usage
