@@ -168,13 +168,13 @@ function Contacts() {
   console.log(unreadMessages)
 
   return (
-    <div className="fixed w-[30vw] top-0 left-0 h-screen bg-lightBackground overflow-hidden">
-      <header className="w-[30vw] top-0 left-0 fixed bg-lightBackground h-24 flex flex-col items-center gap-3 py-4 px-5 md:px-6">
+    <div className="h-screen bg-lightBackground overflow-hidden">
+      <header className="w-full md:w-[30vw] top-0 left-0 fixed bg-lightBackground h-24 flex flex-col items-center gap-3 py-4 px-5 md:px-6">
         <h1 className="text-3xl font-semibold text-center">Contacts</h1>
         <Input
           value={searchUser}
           onChange={handleChange}
-          className="bg-stone-900 px-3 py-2"
+          className="bg-stone-900 px-3 py-2 w-[90%] "
           placeholder="Search here..."
         />
       </header>

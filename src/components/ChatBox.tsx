@@ -1,5 +1,5 @@
 "use client";
-import { SendHorizontal } from "lucide-react";
+import { ArrowLeft, SendHorizontal } from "lucide-react";
 import React, { useState, useEffect, useRef } from "react";
 import useChatBoxStore from "@/store/chatBoxStore";
 import axios from "axios";
@@ -16,7 +16,7 @@ function ChatBox() {
   const { messages, addMessage, setMessages } = useChatStore();
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const { chatBox } = useChatBoxStore();
+  const { chatBox,setChatBox } = useChatBoxStore();
   const { setUnreadMessage,unreadMessages } = useUnreadMessagesStore()
   const { toast } = useToast()
 
@@ -141,9 +141,11 @@ function ChatBox() {
   if (!chatBox) return null;
 
   return (
-    <div className="w-[60%] h-screen flex flex-col bg-gray-100 fixed right-[10%] top-0">
-      <header className="p-4 bg-white border-b flex items-center">
-        <h2 className="text-lg font-semibold">Chat</h2>
+    <div className="h-screen flex flex-col bg-gray-100 md:col-span-2 max-md:w-full max-md:z-40">
+      <header className="p-4 bg-white border-b flex items-center w-full justify-between">
+        <ArrowLeft onClick={()=>setChatBox(undefined)} className="cursor-pointer hover:bg-stone-200 text-xl rounded-full p-1 md:hidden"/>
+        <h2 className="text-lg font-semibold text-center">Chat</h2>
+        <div></div>
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">

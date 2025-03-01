@@ -21,10 +21,10 @@ function page() {
 
   return (
     <>
-      <main className='flex items-center justify-between w-full relative'>
+      <main className='w-full relative grid grid-cols-1 md:grid-cols-3 h-screen overflow-hidden'>
         <Contacts />
         <ChatBox />
-        <SideBar />
+        {/* <SideBar /> */}
       </main>
     </>
   )
