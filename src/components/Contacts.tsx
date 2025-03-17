@@ -6,9 +6,12 @@ import axios from "axios";
 import { IApiResponse } from "@/types/ApiResponse";
 import useChatBoxStore from "@/store/chatBoxStore";
 import { io } from "socket.io-client";
-import { useSession } from "next-auth/react";
+import {  useSession } from "next-auth/react";
 import { useToast } from "@/hooks/use-toast";
 import useUnreadMessagesStore from "@/store/unReadMessages";
+import { Popover, PopoverTrigger } from "./ui/popover";
+import ProfileSetting from "./ProfileSetting";
+import useUserStore from "@/store/userSore";
 
 type Contact = {
   _id: string;
@@ -29,7 +32,8 @@ type SearchedUser = {
 const socket = io("http://localhost:5000");
 
 function Contacts() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const { user, clearUser } = useUserStore()
   const [isScrollable, setIsScrollable] = useState<boolean>(false);
   const [contactList, setContactList] = useState<Contact[]>([]);
   const [searchedUser, setSearchedUser] = useState<SearchedUser>({});
@@ -165,18 +169,32 @@ function Contacts() {
     setChatBox(id);
   };
 
+ 
+
   console.log(unreadMessages)
 
   return (
     <div className="h-screen bg-lightBackground overflow-hidden">
       <header className="w-full md:w-[30vw] top-0 left-0 fixed bg-lightBackground h-24 flex flex-col items-center gap-3 py-4 px-5 md:px-6">
+        <div className="flex items-center gap-14">
+
         <h1 className="text-3xl font-semibold text-center">Contacts</h1>
+          <Popover>
+            <PopoverTrigger asChild>
+              <img src={user?.profileImage || "/user.png"} alt="" className="w-10 h-10 object-cover cursor-pointer rounded-full object-center" />
+            </PopoverTrigger>
+            <ProfileSetting />
+          </Popover>
+
+        
+        </div>
         <Input
           value={searchUser}
           onChange={handleChange}
           className="bg-stone-900 px-3 py-2 w-[90%] "
           placeholder="Search here..."
         />
+        
       </header>
 
       <main
