@@ -6,12 +6,13 @@ import axios from "axios";
 import { IApiResponse } from "@/types/ApiResponse";
 import useChatBoxStore from "@/store/chatBoxStore";
 import { io } from "socket.io-client";
-import {  useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useToast } from "@/hooks/use-toast";
 import useUnreadMessagesStore from "@/store/unReadMessages";
 import { Popover, PopoverTrigger } from "./ui/popover";
 import ProfileSetting from "./ProfileSetting";
 import useUserStore from "@/store/userSore";
+import { Menu } from "lucide-react";
 
 type Contact = {
   _id: string;
@@ -36,7 +37,11 @@ function Contacts() {
   const { user, clearUser } = useUserStore()
   const [isScrollable, setIsScrollable] = useState<boolean>(false);
   const [contactList, setContactList] = useState<Contact[]>([]);
-  const [searchedUser, setSearchedUser] = useState<SearchedUser>({});
+  const [searchedUser, setSearchedUser] = useState<SearchedUser>({
+    _id: "",
+    username: "",
+    profileImage: "",
+});
   const [searchUser, setSearchUser] = useState("");
   const { setChatBox, chatBox } = useChatBoxStore();
   const [lastMessage, setLastMessage] = useState<{ [key: string]: string }>({})
@@ -97,7 +102,8 @@ function Contacts() {
   useEffect(() => {
     async function fetcUnreadCount() {
       const { data } = await axios.post('/api/read-messages', {
-        headers: { "Content-Type": "application/json" }})
+        headers: { "Content-Type": "application/json" }
+      })
 
       if (!data.success) {
         toast({
@@ -148,7 +154,11 @@ function Contacts() {
   useEffect(() => {
     async function searchUserRequest() {
       if (!searchUser) {
-        setSearchedUser({});
+        setSearchedUser({
+          _id: "",
+          username: "",
+          profileImage: "",
+});
         return;
       }
 
@@ -169,24 +179,28 @@ function Contacts() {
     setChatBox(id);
   };
 
- 
+
 
   console.log(unreadMessages)
 
   return (
     <div className="h-screen bg-lightBackground overflow-hidden">
       <header className="w-full md:w-[30vw] top-0 left-0 fixed bg-lightBackground h-24 flex flex-col items-center gap-3 py-4 px-5 md:px-6">
-        <div className="flex items-center gap-14">
+        <div className="relative w-full">
 
-        <h1 className="text-3xl font-semibold text-center">Contacts</h1>
+          <h1 className="text-3xl font-semibold text-center">Contacts</h1>
+          {/* 
+              <img src={user?.profileImage || "/user.png"} alt="" className="w-10 h-10 object-cover cursor-pointer rounded-full object-center" />
+            */}
           <Popover>
             <PopoverTrigger asChild>
-              <img src={user?.profileImage || "/user.png"} alt="" className="w-10 h-10 object-cover cursor-pointer rounded-full object-center" />
+            
+              <Menu className="absolute top-[50%] -translate-y-[50%] right-1 cursor-pointer" />
             </PopoverTrigger>
             <ProfileSetting />
-          </Popover>
+          </Popover> 
+           
 
-        
         </div>
         <Input
           value={searchUser}
@@ -194,7 +208,7 @@ function Contacts() {
           className="bg-stone-900 px-3 py-2 w-[90%] "
           placeholder="Search here..."
         />
-        
+
       </header>
 
       <main
@@ -228,7 +242,7 @@ function Contacts() {
                     <span className="text-sm text-gray-400">
                       {/* {contact.lastMessage ? contact.lastMessage.content : "Say Hi..."} */}
                       {/* ✅ Display the number of unread messages */}
-                      {lastMessage?.[[session?.user._id, contact._id].sort().join("_")]?.slice(0,5) || contact.lastMessage?.content.slice(0,5) || "Say Hi..."}
+                      {lastMessage?.[[session?.user._id, contact._id].sort().join("_")]?.slice(0, 10) || contact.lastMessage?.content.slice(0, 10) || "Say Hi..."}
 
                       {unreadMessages &&
                         unreadMessages.get(contact._id) &&
@@ -243,7 +257,7 @@ function Contacts() {
                   {/* ✅ Show only hours and minutes of the last message */}
                   <span className="ml-auto text-[9px] text-gray-500">
                     {contact.lastMessage
-                      ? new Date(contact.lastMessage.createdAt).toLocaleTimeString([], {
+                      ? new Date(contact.lastMessage.createdAt).toLocaleTimeString("En-Us", {
                         hour: "2-digit",
                         minute: "2-digit",
                       })

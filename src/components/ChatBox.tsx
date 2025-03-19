@@ -27,6 +27,8 @@ function ChatBox() {
     const roomId = [session.user?._id, chatBox?.toString()].sort().join("_");
     console.log("Joining Room:", roomId);
     socket.emit("joinRoom", { roomId });
+
+  
   }, [chatBox, session?.user._id]);
 
 
@@ -145,7 +147,14 @@ function ChatBox() {
       <header className="p-4 bg-white border-b flex items-center w-full justify-between">
         <ArrowLeft onClick={()=>setChatBox(undefined)} className="cursor-pointer hover:bg-stone-200 text-xl rounded-full p-1 md:hidden"/>
         <h2 className="text-lg font-semibold text-center">Chat</h2>
-        <div></div>
+        <div>
+          <button
+            className="text-white font-semibold bg-blue-500 rounded-full px-4 py-2 hover:bg-blue-600"
+            onClick={sendMessage}
+          >
+            Send
+          </button>
+        </div>
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">

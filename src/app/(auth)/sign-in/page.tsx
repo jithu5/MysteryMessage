@@ -100,7 +100,7 @@ function SignInPage() {
                     <FormControl>
 
 
-                      <Input
+                      <Input type='password'
                         placeholder="password" {...field}
                       />
 
