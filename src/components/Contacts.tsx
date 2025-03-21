@@ -242,7 +242,7 @@ function Contacts() {
                     <span className="text-sm text-gray-400">
                       {/* {contact.lastMessage ? contact.lastMessage.content : "Say Hi..."} */}
                       {/* ✅ Display the number of unread messages */}
-                      {lastMessage?.[[session?.user._id, contact._id].sort().join("_")]?.slice(0, 10) || contact.lastMessage?.content.slice(0, 10) || "Say Hi..."}
+                      {lastMessage?.[[session?.user._id, contact._id].sort().join("_")]?.slice(0, 10) || contact.lastMessage?.content.slice(0, 10) || "Say Hi"}...
 
                       {unreadMessages &&
                         unreadMessages.get(contact._id) &&

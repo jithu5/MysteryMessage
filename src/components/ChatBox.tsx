@@ -15,9 +15,14 @@ function ChatBox() {
   const { data: session } = useSession();
   const { messages, addMessage, setMessages } = useChatStore();
   const [message, setMessage] = useState("");
+  const [recipient, setRecipient] = useState({
+    _id: "",
+    username: "",
+    profileImage: "",
+  })
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const { chatBox,setChatBox } = useChatBoxStore();
-  const { setUnreadMessage,unreadMessages } = useUnreadMessagesStore()
+  const { chatBox, setChatBox } = useChatBoxStore();
+  const { setUnreadMessage, unreadMessages } = useUnreadMessagesStore()
   const { toast } = useToast()
 
 
@@ -28,7 +33,19 @@ function ChatBox() {
     console.log("Joining Room:", roomId);
     socket.emit("joinRoom", { roomId });
 
-  
+    async function fetchRecipient() {
+
+      const { data } = await axios.get(`/api/fetch-recipient`, {
+        params: { recipientId: chatBox }
+      })
+      if (!data.success) {
+        return
+      }
+      console.log(data.data)
+      setRecipient(data.data);
+    }
+    fetchRecipient();
+
   }, [chatBox, session?.user._id]);
 
 
@@ -86,14 +103,14 @@ function ChatBox() {
           console.log(contact.sender?.toString(), chatBox?.toString())
           if (contact.sender?.toString() == chatBox?.toString()) {
             console.log('inside if')
-            setUnreadMessage(contact.sender.toString(),0)
+            setUnreadMessage(contact.sender.toString(), 0)
           } else {
             if (unreadMessages.get(contact.sender?.toString()) === 0) {
-              
+
               setUnreadMessage(contact.sender?.toString())
             }
           }
-  
+
         })
       } catch (error) {
         console.log("Error in fetching messages", error);
@@ -101,7 +118,7 @@ function ChatBox() {
     };
 
     fetchMessage();
-  }, [session?.user._id,chatBox]);
+  }, [session?.user._id, chatBox]);
 
   const sendMessage = async () => {
     if (message.trim() === "") return;
@@ -145,15 +162,14 @@ function ChatBox() {
   return (
     <div className="h-screen flex flex-col bg-gray-100 md:col-span-2 max-md:w-full max-md:z-40">
       <header className="p-4 bg-white border-b flex items-center w-full justify-between">
-        <ArrowLeft onClick={()=>setChatBox(undefined)} className="cursor-pointer hover:bg-stone-200 text-xl rounded-full p-1 md:hidden"/>
+        <ArrowLeft onClick={() => setChatBox(undefined)} className="cursor-pointer hover:bg-stone-200 text-xl rounded-full p-1 md:hidden" />
         <h2 className="text-lg font-semibold text-center">Chat</h2>
         <div>
-          <button
-            className="text-white font-semibold bg-blue-500 rounded-full px-4 py-2 hover:bg-blue-600"
-            onClick={sendMessage}
-          >
-            Send
-          </button>
+          { recipient &&
+            recipient?.profileImage && <img src={recipient?.profileImage} alt="Profile" className="w-8 h-8 rounded-full" />} 
+            {
+              recipient && !recipient?.profileImage && <div className="w-8 h-8 rounded-full bg-foreground flex items-center justify-center text-white font-semibold">{recipient?.username?.charAt(0).toUpperCase()}</div>
+            }
         </div>
       </header>
 

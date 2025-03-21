@@ -81,7 +81,8 @@ export async function POST(req: NextRequest) {
                             
                         }
                     }
-                }
+                },
+                { $sort: { "lastMessage.createdAt": -1 } } // 🔥 Sort by last message time (DESC)
             ]);
 
             console.log(users)
